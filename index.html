@@ -17,6 +17,12 @@
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore-compat.js"></script>
+    
     <!-- Lucide CDN -->
     <script src="https://unpkg.com/lucide@latest"></script>
 
@@ -24,23 +30,28 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
         body { font-family: 'Inter', sans-serif; background-color: #0a0b10; -webkit-tap-highlight-color: transparent; color: #f1f5f9; overflow-x: hidden; }
         .italic-force { font-style: italic; }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
         .progress-glow { box-shadow: 0 0 20px rgba(220, 38, 38, 0.4); }
         input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
         .task-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-        select { background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e"); background-position: right 0.5rem center; background-repeat: no-repeat; background-size: 1.5em 1.5em; padding-right: 2.5rem; -webkit-appearance: none; -moz-appearance: none; appearance: none; }
-        
-        .input-glow:focus { border-color: #dc2626; box-shadow: 0 0 10px rgba(220, 38, 38, 0.2); }
     </style>
 </head>
 <body>
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useMemo } = React;
-        
+        const { useState, useEffect, useRef } = React;
+
+        const APP_VERSION = "1.3.0-stable";
+
+        // Firebase Configuration
+        const firebaseConfig = JSON.parse(__firebase_config);
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'valo-climb-default';
+
         const LucideIcon = ({ name, className = "w-5 h-5" }) => {
-            const containerRef = React.useRef(null);
+            const containerRef = useRef(null);
             useEffect(() => {
                 if (containerRef.current && window.lucide) {
                     containerRef.current.innerHTML = `<i data-lucide="${name}" class="${className}"></i>`;
@@ -51,238 +62,172 @@
         };
 
         const INITIAL_ROUTINE = [
-            { 
-                id: 1, time: '10:30 AM', task: 'Wake Up', completed: false, completedAt: null,
-                purpose: 'Reset circadian rhythm.',
-                subtasks: [
-                    { label: 'Drink water', done: false },
-                    { label: 'Open blinds / sunlight', done: false },
-                    { label: 'Brush teeth', done: false }
-                ]
-            },
-            { 
-                id: 2, time: '10:45 AM', task: 'Morning Activation', completed: false, completedAt: null,
-                purpose: 'Improves mouse control + reaction readiness.',
-                subtasks: [
-                    { label: '15 pushups', done: false },
-                    { label: '20 squats', done: false },
-                    { label: 'Wrist + forearm mobility', done: false },
-                    { label: 'Shoulder rotations', done: false }
-                ]
-            },
-            { 
-                id: 3, time: '11:00 AM', task: 'Breakfast', completed: false, completedAt: null,
-                purpose: 'Avoid heavy carbs.',
-                subtasks: [
-                    { label: 'Eggs', done: false },
-                    { label: 'Yogurt', done: false },
-                    { label: 'Protein shake', done: false },
-                    { label: 'Fruit', done: false }
-                ]
-            },
-            { id: 4, time: '11:30 AM', task: 'Life Tasks / School Work', completed: false, completedAt: null, purpose: '2 Pomodoro cycles if possible.' },
-            { 
-                id: 5, time: '12:30 PM', task: 'Mechanical Training', completed: false, completedAt: null,
-                purpose: 'Warm brain + hand coordination.',
-                subtasks: [
-                    { label: '15 min Flick training', done: false },
-                    { label: '15 min Tracking training', done: false },
-                    { label: '15 min Precision micro-adjustment', done: false }
-                ]
-            },
-            { 
-                id: 5.5, time: '1:15 PM', task: 'Final Warmup Window', completed: false, completedAt: null,
-                purpose: 'Transition from trainer to in-game feel.',
-                subtasks: [
-                    { label: '5 min Easy bots', done: false },
-                    { label: '1 Deathmatch (Movement focus)', done: false }
-                ]
-            },
-            { id: 6, time: '1:30 PM', task: 'Ranked Block 1', completed: false, completedAt: null, purpose: '3 matches max. Stop if 2 Ls.' },
-            { id: 7, time: '3:30 PM', task: 'Hard Reset Break', completed: false, completedAt: null, purpose: 'Extremely important for winrate consistency.' },
-            { id: 8, time: '4:30 PM', task: 'Ranked Block 2', completed: false, completedAt: null, purpose: 'Focus on Positioning & Comms.' },
-            { id: 9, time: '6:00 PM', task: 'Running / Cardio', completed: false, completedAt: null, purpose: 'Stamina + Stress reduction.' },
-            { id: 10, time: '7:00 PM', task: 'Recreation Block', completed: false, completedAt: null, purpose: 'Prevents burnout.' },
-            { id: 11, time: '8:30 PM', task: 'Ranked Block 3', completed: false, completedAt: null, purpose: '1–2 matches max.' },
-            { id: 12, time: '10:00 PM', task: 'Mechanical Lock-in', completed: false, completedAt: null, purpose: 'Lock muscle memory.' },
-            { id: 13, time: '10:30 PM', task: 'Dental + Health Routine', completed: false, completedAt: null, purpose: 'Relaxation phase.' },
-            { id: 14, time: '11:30 PM', task: 'Sleep Preparation', completed: false, completedAt: null, purpose: 'Reduce screen brightness.' },
-            { id: 15, time: '12:30 AM', task: 'Sleep Attempt', completed: false, completedAt: null, purpose: 'Leave bed if insomnia lasts 20m.' }
+            { id: 1, time: '10:30 AM', task: 'Wake Up', completed: false, purpose: 'Reset circadian rhythm.', subtasks: [{ label: 'Drink water', done: false }, { label: 'Sunlight', done: false }] },
+            { id: 2, time: '10:45 AM', task: 'Morning Activation', completed: false, purpose: 'Reaction readiness.', subtasks: [{ label: '15 pushups', done: false }, { label: 'Wrist mobility', done: false }] },
+            { id: 3, time: '11:00 AM', task: 'Breakfast', completed: false, purpose: 'Avoid heavy carbs.', subtasks: [{ label: 'Protein focused', done: false }] },
+            { id: 5, time: '12:30 PM', task: 'Mechanical Training', completed: false, purpose: 'Warm brain + hand coordination.', subtasks: [{ label: '15 min Flicking', done: false }, { label: '15 min Tracking', done: false }] },
+            { id: 6, time: '1:30 PM', task: 'Ranked Block 1', completed: false, purpose: '3 matches max. Stop if 2 Ls.' },
+            { id: 7, time: '3:30 PM', task: 'Hard Reset Break', completed: false, purpose: 'Extremely important for winrate.' },
+            { id: 8, time: '4:30 PM', task: 'Ranked Block 2', completed: false, purpose: 'Focus on Positioning.' },
+            { id: 9, time: '6:00 PM', task: 'Running / Cardio', completed: false, purpose: 'Stamina + Stress reduction.' },
+            { id: 11, time: '8:30 PM', task: 'Ranked Block 3', completed: false, purpose: '1–2 matches max.' },
+            { id: 15, time: '12:30 AM', task: 'Sleep Attempt', completed: false, purpose: 'Rest for tomorrow.' }
         ];
 
         const App = () => {
+            const [user, setUser] = useState(null);
             const [activeTab, setActiveTab] = useState('daily');
-            
-            // Load History from LocalStorage
-            const [history, setHistory] = useState(() => {
-                const saved = localStorage.getItem('valoClimb_history');
-                return saved ? JSON.parse(saved) : [];
+            const [routine, setRoutine] = useState(INITIAL_ROUTINE);
+            const [history, setHistory] = useState([]);
+            const [sessionData, setSessionData] = useState({
+                rank: 'Silver 2', sleep: 'Good (7h+ Rested)', wins: 0, losses: 0, currentRR: 22, rrDiff: 0
             });
-            
-            // Load Routine from LocalStorage
-            const [routine, setRoutine] = useState(() => {
-                const saved = localStorage.getItem('valoClimb_routine');
-                return saved ? JSON.parse(saved) : INITIAL_ROUTINE;
-            });
+            const [loading, setLoading] = useState(true);
 
-            // Session Analytics State
-            const [sessionData, setSessionData] = useState(() => {
-                const saved = localStorage.getItem('valoClimb_sessionData');
-                return saved ? JSON.parse(saved) : {
-                    rank: 'Silver 2',
-                    sleep: 'Good (7h+ Rested)',
-                    wins: 0,
-                    losses: 0,
-                    currentRR: 22,
-                    rrDiff: 0
+            // 1. Authenticate & Setup Auth Listener
+            useEffect(() => {
+                const initAuth = async () => {
+                    try {
+                        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                            await auth.signInWithCustomToken(__initial_auth_token);
+                        } else {
+                            await auth.signInAnonymously();
+                        }
+                    } catch (err) {
+                        console.error("Auth error", err);
+                    }
                 };
-            });
+                initAuth();
+                const unsubscribe = auth.onAuthStateChanged(u => {
+                    setUser(u);
+                    if (u) setLoading(false);
+                });
+                return () => unsubscribe();
+            }, []);
 
-            // Auto-save to LocalStorage whenever state changes
+            // 2. Sync Firestore Data (Real-time Save/Load across devices)
             useEffect(() => {
-                localStorage.setItem('valoClimb_history', JSON.stringify(history));
-            }, [history]);
+                if (!user) return;
 
-            useEffect(() => {
-                localStorage.setItem('valoClimb_routine', JSON.stringify(routine));
-            }, [routine]);
+                // Reference paths following mandatory structure
+                const routineRef = db.doc(`artifacts/${appId}/users/${user.uid}/state/routine`);
+                const sessionRef = db.doc(`artifacts/${appId}/users/${user.uid}/state/session`);
+                const historyCol = db.collection(`artifacts/${appId}/users/${user.uid}/history`);
 
-            useEffect(() => {
-                localStorage.setItem('valoClimb_sessionData', JSON.stringify(sessionData));
-            }, [sessionData]);
+                // Listen to Routine
+                const unsubRoutine = routineRef.onSnapshot(doc => {
+                    if (doc.exists) setRoutine(doc.data().tasks);
+                    else routineRef.set({ tasks: INITIAL_ROUTINE });
+                }, err => console.error("Sync error:", err));
 
-            const ranks = [
-                'Unranked', 'Iron 1', 'Iron 2', 'Iron 3', 'Bronze 1', 'Bronze 2', 'Bronze 3', 
-                'Silver 1', 'Silver 2', 'Silver 3', 'Gold 1', 'Gold 2', 'Gold 3', 
-                'Platinum 1', 'Platinum 2', 'Platinum 3', 'Diamond 1', 'Diamond 2', 'Diamond 3', 
-                'Ascendant 1', 'Ascendant 2', 'Ascendant 3', 'Immortal 1', 'Immortal 2', 'Immortal 3', 'Radiant'
-            ];
+                // Listen to Session Stats
+                const unsubSession = sessionRef.onSnapshot(doc => {
+                    if (doc.exists) setSessionData(doc.data());
+                    else sessionRef.set({ rank: 'Silver 2', wins: 0, losses: 0, currentRR: 22 });
+                }, err => console.error("Sync error:", err));
+
+                // Listen to History
+                const unsubHistory = historyCol.onSnapshot(snapshot => {
+                    const logs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+                    setHistory(logs.sort((a, b) => b.timestamp_ms - a.timestamp_ms));
+                }, err => console.error("Sync error:", err));
+
+                return () => { unsubRoutine(); unsubSession(); unsubHistory(); };
+            }, [user]);
+
+            const updateCloudRoutine = (newRoutine) => {
+                if (!user) return;
+                db.doc(`artifacts/${appId}/users/${user.uid}/state/routine`).set({ tasks: newRoutine });
+            };
+
+            const updateCloudSession = (newData) => {
+                if (!user) return;
+                db.doc(`artifacts/${appId}/users/${user.uid}/state/session`).set(newData);
+            };
 
             const toggleTask = (id) => {
-                const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                setRoutine(prev => prev.map(t => {
+                const newRoutine = routine.map(t => {
                     if (t.id === id) {
                         const newStatus = !t.completed;
                         return { 
                             ...t, 
                             completed: newStatus,
-                            completedAt: newStatus ? now : null,
                             subtasks: t.subtasks ? t.subtasks.map(s => ({ ...s, done: newStatus })) : undefined
                         };
                     }
                     return t;
-                }));
+                });
+                updateCloudRoutine(newRoutine);
             };
 
             const toggleSubtask = (taskId, subIdx) => {
-                const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                setRoutine(prev => prev.map(t => {
+                const newRoutine = routine.map(t => {
                     if (t.id === taskId) {
                         const newSubtasks = [...t.subtasks];
                         newSubtasks[subIdx].done = !newSubtasks[subIdx].done;
-                        const allDone = newSubtasks.every(s => s.done);
-                        return { 
-                            ...t, 
-                            subtasks: newSubtasks, 
-                            completed: allDone,
-                            completedAt: allDone ? now : t.completedAt
-                        };
+                        return { ...t, subtasks: newSubtasks, completed: newSubtasks.every(s => s.done) };
                     }
                     return t;
-                }));
+                });
+                updateCloudRoutine(newRoutine);
             };
 
-            const updateSession = (key, val) => {
-                setSessionData(prev => ({ ...prev, [key]: val }));
-            };
-
-            const submitSession = () => {
+            const submitSession = async () => {
+                if (!user) return;
                 const missed = routine.filter(t => !t.completed).map(t => ({ time: t.time, task: t.task }));
-                const newRecord = {
-                    id: Date.now(),
+                const record = {
                     date: new Date().toLocaleDateString(),
-                    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                    timestamp_ms: Date.now(),
                     stats: { ...sessionData },
                     missedTasks: missed
                 };
                 
-                setHistory(prev => [newRecord, ...prev]);
+                await db.collection(`artifacts/${appId}/users/${user.uid}/history`).add(record);
                 
-                // Reset routine for next day
-                setRoutine(INITIAL_ROUTINE);
-                
-                // Keep the rank, but reset session-specific numbers
-                setSessionData(prev => ({ 
-                    ...prev, 
-                    wins: 0, 
-                    losses: 0, 
-                    rrDiff: 0 
-                }));
-                
+                // Reset states in Cloud
+                updateCloudRoutine(INITIAL_ROUTINE);
+                updateCloudSession({ ...sessionData, wins: 0, losses: 0, rrDiff: 0 });
                 setActiveTab('history');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-            };
-
-            const clearHistory = () => {
-                if(confirm("Are you sure you want to delete all historical logs? This cannot be undone.")) {
-                    setHistory([]);
-                }
-            };
-
-            const handleGithubDownload = () => {
-                const htmlContent = document.documentElement.outerHTML;
-                const blob = new Blob([htmlContent], { type: 'text/html' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'index.html';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
             };
 
             const progressPercent = Math.round((routine.filter(t => t.completed).length / routine.length) * 100);
 
+            if (loading) return (
+                <div className="min-h-screen flex items-center justify-center bg-[#0a0b10]">
+                    <div className="text-red-600 font-black animate-pulse uppercase tracking-[0.3em]">Syncing Tactical Cloud...</div>
+                </div>
+            );
+
             return (
                 <div className="min-h-screen p-4 md:p-8 bg-[#0a0b10]">
                     <div className="max-w-3xl mx-auto pb-40">
-                        
                         {/* Header */}
                         <div className="flex justify-between items-start mb-8 pt-4">
                             <div>
-                                <h1 className="text-4xl font-[900] text-red-600 tracking-tighter italic-force">VALO CLIMB</h1>
-                                <p className="text-slate-500 text-[10px] font-black tracking-[0.3em] uppercase">Tactical Performance Cloud</p>
-                            </div>
-                            
-                            <div className="flex items-center gap-2">
-                                <button 
-                                    onClick={handleGithubDownload}
-                                    title="Download index.html for GitHub"
-                                    className="hidden md:flex p-3 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white hover:border-slate-600 transition-all items-center gap-2"
-                                >
-                                    <LucideIcon name="github" />
-                                    <span className="text-[10px] font-black uppercase">Download for GitHub</span>
-                                </button>
-                                <div className="flex gap-2 bg-slate-900/50 p-1.5 rounded-2xl border border-slate-800">
-                                    <button onClick={() => setActiveTab('daily')} className={`p-3 rounded-xl transition-all ${activeTab === 'daily' ? 'bg-red-600 text-white shadow-lg' : 'text-slate-500'}`}>
-                                        <LucideIcon name="check-square" />
-                                    </button>
-                                    <button onClick={() => setActiveTab('history')} className={`p-3 rounded-xl transition-all ${activeTab === 'history' ? 'bg-red-600 text-white shadow-lg' : 'text-slate-500'}`}>
-                                        <LucideIcon name="history" />
-                                    </button>
+                                <h1 className="text-4xl font-[900] text-red-600 tracking-tighter italic-force leading-none">VALO CLIMB</h1>
+                                <div className="mt-1 flex flex-col">
+                                    <p className="text-slate-500 text-[9px] font-black tracking-[0.3em] uppercase">Tactical Performance Cloud</p>
+                                    <span className="text-slate-600 text-[8px] font-bold uppercase tracking-tighter">v{APP_VERSION}</span>
                                 </div>
+                            </div>
+                            <div className="flex gap-2 bg-slate-900/50 p-1.5 rounded-2xl border border-slate-800">
+                                <button onClick={() => setActiveTab('daily')} className={`p-3 rounded-xl transition-all ${activeTab === 'daily' ? 'bg-red-600 text-white shadow-lg' : 'text-slate-500'}`}>
+                                    <LucideIcon name="check-square" />
+                                </button>
+                                <button onClick={() => setActiveTab('history')} className={`p-3 rounded-xl transition-all ${activeTab === 'history' ? 'bg-red-600 text-white shadow-lg' : 'text-slate-500'}`}>
+                                    <LucideIcon name="history" />
+                                </button>
                             </div>
                         </div>
 
                         {activeTab === 'daily' ? (
                             <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
-                                {/* Efficiency Gauge */}
+                                {/* Gauge */}
                                 <div className="bg-gradient-to-br from-slate-900 to-slate-950 border border-slate-800 p-7 rounded-[2.5rem] relative overflow-hidden shadow-2xl">
                                     <div className="flex justify-between items-end mb-4">
                                         <div className="space-y-1">
-                                            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Training Efficiency</span>
-                                            <div className="text-sm font-bold text-slate-300">Daily Goal Progression</div>
+                                            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Efficiency Gauge</span>
+                                            <div className="text-sm font-bold text-slate-300">Daily Objective Completion</div>
                                         </div>
                                         <span className="text-4xl font-black text-red-600 italic-force leading-none">{progressPercent}%</span>
                                     </div>
@@ -291,7 +236,7 @@
                                     </div>
                                 </div>
 
-                                {/* Task Feed */}
+                                {/* Task List */}
                                 <div className="space-y-4">
                                     {routine.map(item => (
                                         <div key={item.id} className={`task-card flex flex-col p-6 rounded-[2rem] border transition-all ${item.completed ? 'bg-slate-950/40 border-slate-900 opacity-40' : 'bg-slate-900 border-slate-800 shadow-xl'}`}>
@@ -300,206 +245,74 @@
                                                     {item.completed ? <LucideIcon name="check-circle" className="w-9 h-9" /> : <div className="w-9 h-9 border-2 border-current rounded-2xl rotate-45" />}
                                                 </div>
                                                 <div className="flex-1">
-                                                    <div className="flex justify-between items-start">
-                                                        <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">{item.time}</span>
-                                                        {item.completedAt && <span className="text-[8px] font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full uppercase tracking-tighter">Logged at {item.completedAt}</span>}
-                                                    </div>
+                                                    <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">{item.time}</span>
                                                     <h3 className={`font-black text-xl uppercase tracking-tight ${item.completed ? 'line-through text-slate-600' : 'text-white'}`}>{item.task}</h3>
                                                 </div>
                                             </div>
-                                            
-                                            {!item.completed && (
-                                                <div className="mt-4 ml-14 space-y-4">
-                                                    {item.subtasks && (
-                                                        <div className="space-y-2.5">
-                                                            <div className="text-[8px] font-black text-slate-600 uppercase tracking-widest mb-1">Immediately:</div>
-                                                            {item.subtasks.map((sub, idx) => (
-                                                                <div key={idx} onClick={() => toggleSubtask(item.id, idx)} className="flex items-center gap-3 cursor-pointer group">
-                                                                    <div className={`w-4 h-4 rounded-md border flex items-center justify-center transition-all ${sub.done ? 'bg-emerald-500 border-emerald-500' : 'border-slate-700 group-hover:border-red-500'}`}>
-                                                                        {sub.done && <LucideIcon name="check" className="w-3 h-3 text-white" />}
-                                                                    </div>
-                                                                    <span className={`text-[11px] font-black uppercase tracking-wider ${sub.done ? 'text-slate-600 line-through' : 'text-slate-400 group-hover:text-white'}`}>{sub.label}</span>
-                                                                </div>
-                                                            ))}
+                                            {!item.completed && item.subtasks && (
+                                                <div className="mt-4 ml-14 space-y-2.5">
+                                                    {item.subtasks.map((sub, idx) => (
+                                                        <div key={idx} onClick={() => toggleSubtask(item.id, idx)} className="flex items-center gap-3 cursor-pointer group">
+                                                            <div className={`w-4 h-4 rounded-md border flex items-center justify-center transition-all ${sub.done ? 'bg-emerald-500 border-emerald-500' : 'border-slate-700 group-hover:border-red-500'}`}>
+                                                                {sub.done && <LucideIcon name="check" className="w-3 h-3 text-white" />}
+                                                            </div>
+                                                            <span className={`text-[11px] font-black uppercase tracking-wider ${sub.done ? 'text-slate-600 line-through' : 'text-slate-400 group-hover:text-white'}`}>{sub.label}</span>
                                                         </div>
-                                                    )}
-                                                    <div className="pt-2 border-t border-slate-800/50">
-                                                        <span className="text-[8px] font-black text-red-600/50 uppercase tracking-widest block mb-1">Purpose:</span>
-                                                        <p className="text-[10px] text-slate-500 font-bold italic">{item.purpose}</p>
-                                                    </div>
+                                                    ))}
                                                 </div>
                                             )}
                                         </div>
                                     ))}
                                 </div>
 
-                                {/* End of Day Analytics Section */}
+                                {/* Session Report */}
                                 <div className="mt-12 bg-slate-900 border-2 border-slate-800 rounded-[3rem] p-8 shadow-2xl">
-                                    <div className="flex items-center gap-3 mb-8">
-                                        <div className="bg-red-600 p-2 rounded-xl">
-                                            <LucideIcon name="bar-chart" className="text-white w-5 h-5" />
+                                    <h3 className="text-xl font-black uppercase tracking-tighter italic-force mb-8">Daily Session Report</h3>
+                                    <div className="grid grid-cols-2 gap-8 mb-8">
+                                        <div className="text-center">
+                                            <label className="text-[10px] font-black text-emerald-500 uppercase block mb-1">Wins</label>
+                                            <input type="number" value={sessionData.wins} onChange={e => updateCloudSession({...sessionData, wins: parseInt(e.target.value)||0})} className="w-full bg-transparent text-center font-black text-5xl text-emerald-400 outline-none italic-force" />
                                         </div>
-                                        <h3 className="text-xl font-black uppercase tracking-tighter italic-force">End of Day Analytics</h3>
-                                    </div>
-
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                        {/* Selectors */}
-                                        <div className="space-y-4">
-                                            <div className="space-y-2">
-                                                <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-2">Current Rank</label>
-                                                <select 
-                                                    value={sessionData.rank}
-                                                    onChange={(e) => updateSession('rank', e.target.value)}
-                                                    className="w-full bg-slate-950 border border-slate-800 text-white rounded-2xl px-5 py-3.5 font-bold text-sm outline-none focus:border-red-600 transition-colors"
-                                                >
-                                                    {ranks.map(r => <option key={r} value={r}>{r}</option>)}
-                                                </select>
-                                            </div>
-                                            <div className="space-y-2">
-                                                <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-2">Sleep Quality</label>
-                                                <select 
-                                                    value={sessionData.sleep}
-                                                    onChange={(e) => updateSession('sleep', e.target.value)}
-                                                    className="w-full bg-slate-950 border border-slate-800 text-white rounded-2xl px-5 py-3.5 font-bold text-sm outline-none focus:border-red-600 transition-colors"
-                                                >
-                                                    <option>Excellent (8h+ Deep)</option>
-                                                    <option>Good (7h+ Rested)</option>
-                                                    <option>Average (6h-7h)</option>
-                                                    <option>Poor (Fragmented)</option>
-                                                    <option>Insomnia / Tired</option>
-                                                </select>
-                                            </div>
-                                        </div>
-
-                                        {/* Wins / Losses */}
-                                        <div className="flex justify-around items-center pt-4">
-                                            <div className="text-center">
-                                                <label className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1 block">Wins</label>
-                                                <input 
-                                                    type="number" 
-                                                    value={sessionData.wins} 
-                                                    onChange={(e) => updateSession('wins', parseInt(e.target.value) || 0)}
-                                                    className="w-20 bg-transparent text-center font-black text-5xl text-emerald-400 outline-none italic-force border-b border-emerald-500/10 focus:border-emerald-500"
-                                                />
-                                            </div>
-                                            <div className="h-12 w-px bg-slate-800"></div>
-                                            <div className="text-center">
-                                                <label className="text-[10px] font-black text-red-500 uppercase tracking-widest mb-1 block">Losses</label>
-                                                <input 
-                                                    type="number" 
-                                                    value={sessionData.losses} 
-                                                    onChange={(e) => updateSession('losses', parseInt(e.target.value) || 0)}
-                                                    className="w-20 bg-transparent text-center font-black text-5xl text-red-400 outline-none italic-force border-b border-red-500/10 focus:border-red-500"
-                                                />
-                                            </div>
+                                        <div className="text-center">
+                                            <label className="text-[10px] font-black text-red-500 uppercase block mb-1">Losses</label>
+                                            <input type="number" value={sessionData.losses} onChange={e => updateCloudSession({...sessionData, losses: parseInt(e.target.value)||0})} className="w-full bg-transparent text-center font-black text-5xl text-red-400 outline-none italic-force" />
                                         </div>
                                     </div>
-
-                                    {/* RR Values */}
-                                    <div className="mt-8 flex items-center gap-6 p-6 bg-slate-950/50 border border-slate-800/50 rounded-3xl">
-                                        <div className="flex-1 space-y-2">
-                                            <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Current RR</label>
-                                            <input 
-                                                type="number" 
-                                                value={sessionData.currentRR} 
-                                                onChange={(e) => updateSession('currentRR', parseInt(e.target.value) || 0)}
-                                                className="w-full bg-transparent border-b border-slate-800 text-white font-black text-2xl outline-none py-1 focus:border-red-600 transition-colors"
-                                            />
-                                        </div>
-                                        <div className="flex-1 space-y-2">
-                                            <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest">RR Session +/-</label>
-                                            <input 
-                                                type="number" 
-                                                value={sessionData.rrDiff} 
-                                                placeholder="±0"
-                                                onChange={(e) => updateSession('rrDiff', parseInt(e.target.value) || 0)}
-                                                className={`w-full bg-transparent border-b border-slate-800 font-black text-2xl outline-none py-1 focus:border-red-600 transition-colors ${sessionData.rrDiff >= 0 ? 'text-emerald-500' : 'text-red-500'}`}
-                                            />
-                                        </div>
-                                    </div>
-                                    
-                                    <button 
-                                        onClick={submitSession}
-                                        className="w-full mt-8 py-4 bg-red-600 hover:bg-red-500 text-white font-[900] uppercase italic-force tracking-widest rounded-2xl shadow-xl shadow-red-600/20 transition-all active:scale-[0.98]"
-                                    >
-                                        SUBMIT DAILY SESSION
+                                    <button onClick={submitSession} className="w-full py-4 bg-red-600 hover:bg-red-500 text-white font-[900] uppercase italic-force tracking-widest rounded-2xl shadow-xl transition-all active:scale-[0.98]">
+                                        SUBMIT CLOUD LOG
                                     </button>
                                 </div>
                             </div>
                         ) : (
-                            <div className="space-y-8 animate-in fade-in duration-500">
-                                <div className="flex justify-between items-center">
-                                    <h2 className="text-2xl font-black text-white italic-force uppercase tracking-tighter">Session Archive</h2>
-                                    {history.length > 0 && (
-                                        <button 
-                                            onClick={clearHistory}
-                                            className="text-[10px] font-black text-red-600 uppercase tracking-widest hover:text-red-400 transition-colors"
-                                        >
-                                            Clear All
-                                        </button>
-                                    )}
+                            <div className="space-y-6 animate-in fade-in duration-500">
+                                <div className="flex justify-between items-center px-2">
+                                    <h2 className="text-2xl font-black text-white italic-force uppercase tracking-tighter">Global Archive</h2>
+                                    <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest italic-force">Live Sync Active</div>
                                 </div>
                                 
                                 {history.length === 0 ? (
-                                    <div className="bg-slate-900 border border-slate-800 p-12 rounded-[3rem] text-center">
-                                        <LucideIcon name="clipboard-list" className="w-12 h-12 text-slate-700 mx-auto mb-4" />
-                                        <p className="text-slate-500 font-bold uppercase text-xs tracking-widest">No submitted sessions found</p>
-                                    </div>
+                                    <div className="py-20 text-center text-slate-700 uppercase font-black tracking-widest text-[10px]">No Battle Logs Found</div>
                                 ) : (
-                                    <div className="space-y-6">
-                                        {history.map(record => (
-                                            <div key={record.id} className="bg-slate-900 border border-slate-800 rounded-[2.5rem] overflow-hidden shadow-xl">
-                                                <div className="bg-slate-950 p-6 flex justify-between items-center border-b border-slate-800">
-                                                    <div>
-                                                        <div className="text-[10px] font-black text-red-600 uppercase tracking-widest">Submitted On</div>
-                                                        <div className="text-sm font-black text-white">{record.date} @ {record.timestamp}</div>
-                                                    </div>
-                                                    <div className="text-right">
-                                                        <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Ending Rank</div>
-                                                        <div className="text-sm font-black text-emerald-500 italic-force">{record.stats.rank} ({record.stats.currentRR}RR)</div>
-                                                    </div>
-                                                </div>
-                                                
-                                                <div className="p-6">
-                                                    <div className="flex gap-4 mb-6">
-                                                        <div className="flex-1 text-center border-r border-slate-800">
-                                                            <div className="text-[8px] font-black text-slate-500 uppercase">Sleep</div>
-                                                            <div className="text-[11px] font-bold text-slate-300">{record.stats.sleep}</div>
-                                                        </div>
-                                                        <div className="flex-1 text-center border-r border-slate-800">
-                                                            <div className="text-[8px] font-black text-slate-500 uppercase">Result</div>
-                                                            <div className="text-[11px] font-bold text-slate-300 uppercase">
-                                                                <span className="text-emerald-500">{record.stats.wins}W</span> - <span className="text-red-500">{record.stats.losses}L</span>
-                                                            </div>
-                                                        </div>
-                                                        <div className="flex-1 text-center">
-                                                            <div className="text-[8px] font-black text-slate-500 uppercase">Net RR</div>
-                                                            <div className={`text-[11px] font-black ${record.stats.rrDiff >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
-                                                                {record.stats.rrDiff > 0 ? '+' : ''}{record.stats.rrDiff}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-
-                                                    <div>
-                                                        <h4 className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-2">
-                                                            <LucideIcon name="alert-circle" className="w-3 h-3 text-red-600" />
-                                                            Incomplete Objectives
-                                                        </h4>
-                                                        <div className="space-y-2">
-                                                            {record.missedTasks.length > 0 ? record.missedTasks.map((t, idx) => (
-                                                                <div key={idx} className="flex justify-between items-center bg-black/20 p-3 rounded-xl border border-white/5">
-                                                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">{t.task}</span>
-                                                                    <span className="text-[9px] font-bold text-slate-600 italic-force">{t.time}</span>
-                                                                </div>
-                                                            )) : (
-                                                                <div className="text-[10px] font-black text-emerald-500/50 uppercase italic-force">Perfect Session: 100% Efficiency</div>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                </div>
+                                    history.map(record => (
+                                        <div key={record.id} className="bg-slate-900 border border-slate-800 rounded-[2.5rem] p-6 shadow-xl">
+                                            <div className="flex justify-between items-center mb-4">
+                                                <span className="text-sm font-black text-white italic-force">{record.date}</span>
+                                                <span className={`text-xs font-black uppercase px-2 py-0.5 rounded ${record.stats.wins >= record.stats.losses ? 'bg-emerald-950/40 text-emerald-400' : 'bg-red-950/40 text-red-400'}`}>
+                                                    {record.stats.wins}W - {record.stats.losses}L
+                                                </span>
                                             </div>
-                                        ))}
-                                    </div>
+                                            {record.missedTasks?.length > 0 && (
+                                                <div className="mt-4 pt-4 border-t border-slate-800/50">
+                                                    <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest block mb-2">Gaps in Discipline:</span>
+                                                    <div className="flex flex-wrap gap-1.5">
+                                                        {record.missedTasks.map((m, i) => (
+                                                            <span key={i} className="text-[8px] font-bold text-slate-400 bg-slate-800/40 px-2 py-0.5 rounded-full uppercase italic-force">{m.task}</span>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))
                                 )}
                             </div>
                         )}
@@ -507,13 +320,13 @@
                         {/* Navigation Tab Bar */}
                         <div className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[calc(100%-3rem)] max-w-sm z-40">
                              <div className="bg-slate-900/80 backdrop-blur-xl border border-white/5 p-2 rounded-[2.5rem] shadow-2xl flex justify-around">
-                                <button onClick={() => setActiveTab('daily')} className={`flex-1 py-4 rounded-[2rem] flex flex-col items-center gap-1 transition-all ${activeTab === 'daily' ? 'text-white' : 'text-slate-500'}`}>
+                                <button onClick={() => setActiveTab('daily')} className={`flex-1 py-4 flex flex-col items-center gap-1 transition-all ${activeTab === 'daily' ? 'text-white' : 'text-slate-500'}`}>
                                     <LucideIcon name="list" className="w-5 h-5" />
-                                    <span className="text-[8px] font-black uppercase tracking-[0.2em]">Routine</span>
+                                    <span className="text-[8px] font-black uppercase tracking-widest">Routine</span>
                                 </button>
-                                <button onClick={() => setActiveTab('history')} className={`flex-1 py-4 rounded-[2rem] flex flex-col items-center gap-1 transition-all ${activeTab === 'history' ? 'text-white' : 'text-slate-500'}`}>
+                                <button onClick={() => setActiveTab('history')} className={`flex-1 py-4 flex flex-col items-center gap-1 transition-all ${activeTab === 'history' ? 'text-white' : 'text-slate-500'}`}>
                                     <LucideIcon name="history" className="w-5 h-5" />
-                                    <span className="text-[8px] font-black uppercase tracking-[0.2em]">History</span>
+                                    <span className="text-[8px] font-black uppercase tracking-widest">History</span>
                                 </button>
                              </div>
                         </div>
