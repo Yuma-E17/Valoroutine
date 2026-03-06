@@ -5,41 +5,44 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>VALOROUTINE | Tactical Tracker</title>
     
-    <!-- PWA Metadata for iOS -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Valoroutine">
     
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- React & Libraries -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <!-- Lucide CDN -->
     <script src="https://unpkg.com/lucide@latest"></script>
-
-    <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore-compat.js"></script>
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
-        body { font-family: 'Inter', sans-serif; background-color: #0a0b10; -webkit-tap-highlight-color: transparent; color: #f1f5f9; overflow-x: hidden; }
+        
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: #06070a; 
+            -webkit-tap-highlight-color: transparent; 
+            color: #f1f5f9; 
+            overflow-x: hidden; 
+        }
+
         .italic-force { font-style: italic; }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
         .progress-glow { box-shadow: 0 0 20px rgba(220, 38, 38, 0.4); }
-        input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-        .task-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-        select { background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e"); background-position: right 0.5rem center; background-repeat: no-repeat; background-size: 1.5em 1.5em; padding-right: 2.5rem; -webkit-appearance: none; -moz-appearance: none; appearance: none; }
-        .input-glow:focus { border-color: #dc2626; box-shadow: 0 0 10px rgba(220, 38, 38, 0.2); }
-        /* Fix for iOS text rendering in small containers */
-        .ios-text-fix {
-            -webkit-font-smoothing: antialiased;
-            text-rendering: optimizeLegibility;
-            line-height: 1.2 !important;
+        .ios-text-fix { -webkit-font-smoothing: antialiased; line-height: 1.5 !important; }
+        .card-shadow { box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5); }
+        
+        .tab-btn { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .active-tab { color: #ef4444; background: rgba(239, 68, 68, 0.1); }
+        
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+
+        select {
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            background-size: 1em;
         }
     </style>
 </head>
@@ -47,15 +50,28 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useRef, useMemo } = React;
+        const { useState, useEffect, useRef } = React;
         
-        // Firebase Config Handling
-        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'valoroutine-default';
-        
-        if (firebaseConfig.apiKey) {
-            firebase.initializeApp(firebaseConfig);
-        }
+        const RANKS = [
+            "Unrated", "Iron 1", "Iron 2", "Iron 3", "Bronze 1", "Bronze 2", "Bronze 3", 
+            "Silver 1", "Silver 2", "Silver 3", "Gold 1", "Gold 2", "Gold 3", 
+            "Platinum 1", "Platinum 2", "Platinum 3", "Diamond 1", "Diamond 2", "Diamond 3", 
+            "Ascendant 1", "Ascendant 2", "Ascendant 3", "Immortal 1", "Immortal 2", "Immortal 3", "Radiant"
+        ];
+
+        const INITIAL_ROUTINE = [
+            { id: 1, time: '10:30 AM', duration: '15m', task: 'Wake Up', completed: false, purpose: 'Reset circadian rhythm.', subtasks: [{ label: 'Drink water', done: false }, { label: 'Sunlight Exposure', done: false }, { label: 'Brush teeth', done: false }] },
+            { id: 2, time: '10:45 AM', duration: '15m', task: 'Morning Activation', completed: false, purpose: 'Improves mouse control.', subtasks: [{ label: '15 pushups', done: false }, { label: '20 squats', done: false }, { label: 'Wrist mobility', done: false }] },
+            { id: 3, time: '11:00 AM', duration: '30m', task: 'Breakfast', completed: false, purpose: 'Avoid heavy carbs.', subtasks: [{ label: 'High Protein Meal', done: false }, { label: 'Hydrate', done: false }] },
+            { id: 4, time: '11:30 AM', duration: '1h', task: 'Life Tasks', completed: false, purpose: 'Productivity window.' },
+            { id: 5, time: '12:30 PM', duration: '45m', task: 'Mechanical Training', completed: false, purpose: 'Warm brain + coordination.', subtasks: [{ label: 'Flick training', done: false }, { label: 'Tracking training', done: false }] },
+            { id: 6, time: '1:30 PM', duration: '2h', task: 'Ranked Block 1', completed: false, purpose: 'Peak performance window.' },
+            { id: 7, time: '3:30 PM', duration: '1h', task: 'Hard Reset Break', completed: false, purpose: 'Avoid mental fatigue.' },
+            { id: 8, time: '4:30 PM', duration: '1.5h', task: 'Ranked Block 2', completed: false, purpose: 'Positioning focus.' },
+            { id: 9, time: '6:00 PM', duration: '1h', task: 'Cardio', completed: false, purpose: 'Stress reduction.' },
+            { id: 11, time: '8:30 PM', duration: '1.5h', task: 'Ranked Block 3', completed: false, purpose: 'Night session.' },
+            { id: 15, time: '12:30 AM', duration: 'N/A', task: 'Sleep Attempt', completed: false, purpose: 'Recovery.' }
+        ];
 
         const LucideIcon = ({ name, className = "w-5 h-5" }) => {
             const containerRef = useRef(null);
@@ -68,489 +84,226 @@
             return <span ref={containerRef} className="inline-block" />;
         };
 
-        const INITIAL_ROUTINE = [
-            { 
-                id: 1, time: '10:30 AM', duration: '15m', task: 'Wake Up', completed: false, completedAt: null,
-                purpose: 'Reset circadian rhythm.',
-                subtasks: [
-                    { label: 'Drink water', done: false },
-                    { label: 'Open blinds / sunlight', done: false },
-                    { label: 'Brush teeth', done: false }
-                ]
-            },
-            { 
-                id: 2, time: '10:45 AM', duration: '15m', task: 'Morning Activation', completed: false, completedAt: null,
-                purpose: 'Improves mouse control + reaction readiness.',
-                subtasks: [
-                    { label: '15 pushups', done: false },
-                    { label: '20 squats', done: false },
-                    { label: 'Wrist + forearm mobility', done: false },
-                    { label: 'Shoulder rotations', done: false }
-                ]
-            },
-            { 
-                id: 3, time: '11:00 AM', duration: '30m', task: 'Breakfast', completed: false, completedAt: null,
-                purpose: 'Avoid heavy carbs.',
-                subtasks: [
-                    { label: 'Eggs', done: false },
-                    { label: 'Yogurt', done: false },
-                    { label: 'Protein shake', done: false },
-                    { label: 'Fruit', done: false }
-                ]
-            },
-            { id: 4, time: '11:30 AM', duration: '1h', task: 'Life Tasks / School Work', completed: false, completedAt: null, purpose: '2 Pomodoro cycles if possible.' },
-            { 
-                id: 5, time: '12:30 PM', duration: '45m', task: 'Mechanical Training', completed: false, completedAt: null,
-                purpose: 'Warm brain + hand coordination.',
-                subtasks: [
-                    { label: '15 min Flick training', done: false },
-                    { label: '15 min Tracking training', done: false },
-                    { label: '15 min Precision micro-adjustment', done: false }
-                ]
-            },
-            { 
-                id: 5.5, time: '1:15 PM', duration: '15m', task: 'Final Warmup Window', completed: false, completedAt: null,
-                purpose: 'Transition from trainer to in-game feel.',
-                subtasks: [
-                    { label: '5 min Easy bots', done: false },
-                    { label: '1 Deathmatch (Movement focus)', done: false }
-                ]
-            },
-            { id: 6, time: '1:30 PM', duration: '2h', task: 'Ranked Block 1', completed: false, completedAt: null, purpose: '3 matches max. Stop if 2 Ls.' },
-            { id: 7, time: '3:30 PM', duration: '1h', task: 'Hard Reset Break', completed: false, completedAt: null, purpose: 'Extremely important for winrate consistency.' },
-            { id: 8, time: '4:30 PM', duration: '1.5h', task: 'Ranked Block 2', completed: false, completedAt: null, purpose: 'Focus on Positioning & Comms.' },
-            { id: 9, time: '6:00 PM', duration: '1h', task: 'Running / Cardio', completed: false, completedAt: null, purpose: 'Stamina + Stress reduction.' },
-            { id: 10, time: '7:00 PM', duration: '1.5h', task: 'Recreation Block', completed: false, completedAt: null, purpose: 'Prevents burnout.' },
-            { id: 11, time: '8:30 PM', duration: '1.5h', task: 'Ranked Block 3', completed: false, completedAt: null, purpose: '1–2 matches max.' },
-            { id: 12, time: '10:00 PM', duration: '30m', task: 'Mechanical Lock-in', completed: false, completedAt: null, purpose: 'Lock muscle memory.' },
-            { id: 13, time: '10:30 PM', duration: '1h', task: 'Dental + Health Routine', completed: false, completedAt: null, purpose: 'Relaxation phase.' },
-            { id: 14, time: '11:30 PM', duration: '1h', task: 'Sleep Preparation', completed: false, completedAt: null, purpose: 'Reduce screen brightness.' },
-            { id: 15, time: '12:30 AM', duration: 'N/A', task: 'Sleep Attempt', completed: false, completedAt: null, purpose: 'Leave bed if insomnia lasts 20m.' }
-        ];
+        const MouseIcon = ({ className }) => (
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                <rect x="5" y="2" width="14" height="20" rx="7" />
+                <path d="M12 2v7" />
+            </svg>
+        );
 
         const App = () => {
             const [activeTab, setActiveTab] = useState('daily');
-            const [user, setUser] = useState(null);
-            
-            const [history, setHistory] = useState(() => {
-                const saved = localStorage.getItem('valoClimb_history');
-                return saved ? JSON.parse(saved) : [];
-            });
-            
             const [routine, setRoutine] = useState(() => {
-                const saved = localStorage.getItem('valoClimb_routine');
+                const saved = localStorage.getItem('valoroutine_v5_data');
                 return saved ? JSON.parse(saved) : INITIAL_ROUTINE;
             });
 
-            const [sessionData, setSessionData] = useState(() => {
-                const saved = localStorage.getItem('valoClimb_sessionData');
-                return saved ? JSON.parse(saved) : {
-                    rank: 'Silver 2',
-                    sleep: 'Good (7h+ Rested)',
-                    wins: 0,
-                    losses: 0,
-                    currentRR: 22,
-                    rrDiff: 0
+            const [gear, setGear] = useState(() => {
+                const saved = localStorage.getItem('valoroutine_gear_v5');
+                return saved ? JSON.parse(saved) : { 
+                    mouse: 'Logitech G Pro', 
+                    sens: '0.3', 
+                    dpi: '800', 
+                    pad: 'Artisan Zero', 
+                    hz: '240Hz',
+                    res: '1920x1080',
+                    rawInput: 'On',
+                    polling: '1000Hz',
+                    hrtf: 'On',
+                    winSens: '6/11'
                 };
             });
 
-            // Firebase Auth
-            useEffect(() => {
-                if (!firebaseConfig.apiKey) return;
-                const auth = firebase.auth();
-                const initAuth = async () => {
-                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                        await auth.signInWithCustomToken(__initial_auth_token);
-                    } else {
-                        await auth.signInAnonymously();
-                    }
-                };
-                initAuth();
-                return auth.onAuthStateChanged(setUser);
-            }, []);
-
-            // Firestore Sync
-            useEffect(() => {
-                if (!user || !firebaseConfig.apiKey) return;
-                const db = firebase.firestore();
-                const historyRef = db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('history');
-                
-                const unsubscribe = historyRef.onSnapshot((snapshot) => {
-                    const cloudHistory = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-                    if (cloudHistory.length > 0) {
-                        const sorted = cloudHistory.sort((a, b) => b.id - a.id);
-                        setHistory(sorted);
-                    }
-                }, (error) => console.error("History sync failed:", error));
-
-                return () => unsubscribe();
-            }, [user]);
+            const [stats, setStats] = useState(() => {
+                const saved = localStorage.getItem('valoroutine_stats_v5');
+                return saved ? JSON.parse(saved) : { rank: 'Platinum 2', currentRR: 0, wins: 0, losses: 0, rrDelta: 0 };
+            });
 
             useEffect(() => {
-                localStorage.setItem('valoClimb_history', JSON.stringify(history));
-            }, [history]);
-
-            useEffect(() => {
-                localStorage.setItem('valoClimb_routine', JSON.stringify(routine));
-            }, [routine]);
-
-            useEffect(() => {
-                localStorage.setItem('valoClimb_sessionData', JSON.stringify(sessionData));
-            }, [sessionData]);
-
-            const ranks = [
-                'Unranked', 'Iron 1', 'Iron 2', 'Iron 3', 'Bronze 1', 'Bronze 2', 'Bronze 3', 
-                'Silver 1', 'Silver 2', 'Silver 3', 'Gold 1', 'Gold 2', 'Gold 3', 
-                'Platinum 1', 'Platinum 2', 'Platinum 3', 'Diamond 1', 'Diamond 2', 'Diamond 3', 
-                'Ascendant 1', 'Ascendant 2', 'Ascendant 3', 'Immortal 1', 'Immortal 2', 'Immortal 3', 'Radiant'
-            ];
+                localStorage.setItem('valoroutine_v5_data', JSON.stringify(routine));
+                localStorage.setItem('valoroutine_gear_v5', JSON.stringify(gear));
+                localStorage.setItem('valoroutine_stats_v5', JSON.stringify(stats));
+            }, [routine, gear, stats]);
 
             const toggleTask = (id) => {
-                const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                 setRoutine(prev => prev.map(t => {
                     if (t.id === id) {
-                        const newStatus = !t.completed;
-                        return { 
-                            ...t, 
-                            completed: newStatus,
-                            completedAt: newStatus ? now : null,
-                            subtasks: t.subtasks ? t.subtasks.map(s => ({ ...s, done: newStatus })) : undefined
-                        };
+                        const nextState = !t.completed;
+                        return { ...t, completed: nextState, subtasks: t.subtasks ? t.subtasks.map(s => ({ ...s, done: nextState })) : undefined };
                     }
                     return t;
                 }));
             };
 
             const toggleSubtask = (taskId, subIdx) => {
-                const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                 setRoutine(prev => prev.map(t => {
                     if (t.id === taskId) {
-                        const newSubtasks = t.subtasks.map((s, idx) => 
-                            idx === subIdx ? { ...s, done: !s.done } : s
-                        );
-                        const allDone = newSubtasks.every(s => s.done);
-                        return { 
-                            ...t, 
-                            subtasks: newSubtasks, 
-                            completed: allDone,
-                            completedAt: allDone ? now : (t.completed ? t.completedAt : null)
-                        };
+                        const newSubtasks = t.subtasks.map((s, idx) => idx === subIdx ? { ...s, done: !s.done } : s);
+                        return { ...t, subtasks: newSubtasks, completed: newSubtasks.every(s => s.done) };
                     }
                     return t;
                 }));
             };
 
-            const updateSession = (key, val) => {
-                setSessionData(prev => ({ ...prev, [key]: val }));
-            };
+            const updateStat = (key, val) => setStats(prev => ({ ...prev, [key]: val }));
 
-            const submitSession = async () => {
-                const missed = routine.filter(t => !t.completed).map(t => ({ time: t.time, task: t.task }));
-                const newRecord = {
-                    id: Date.now(),
-                    date: new Date().toLocaleDateString(),
-                    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                    stats: { ...sessionData },
-                    missedTasks: missed
-                };
-                
-                if (user && firebaseConfig.apiKey) {
-                    const db = firebase.firestore();
-                    await db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('history').doc(String(newRecord.id)).set(newRecord);
-                } else {
-                    setHistory(prev => [newRecord, ...prev]);
-                }
-
-                setRoutine(INITIAL_ROUTINE);
-                setSessionData(prev => ({ 
-                    ...prev, 
-                    wins: 0, 
-                    losses: 0, 
-                    rrDiff: 0 
-                }));
-                
-                setActiveTab('history');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-            };
-
-            const clearHistory = async () => {
-                if(confirm("Are you sure you want to delete all historical logs?")) {
-                    if (user && firebaseConfig.apiKey) {
-                        const db = firebase.firestore();
-                        const historyRef = db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('history');
-                        const snapshot = await historyRef.get();
-                        const batch = db.batch();
-                        snapshot.docs.forEach(doc => batch.delete(doc.ref));
-                        await batch.commit();
-                    }
-                    setHistory([]);
-                }
-            };
-
-            const forceRefresh = () => {
-                window.location.reload();
-            };
-
-            const progressPercent = Math.round((routine.filter(t => t.completed).length / routine.length) * 100);
+            const progress = Math.round((routine.filter(t => t.completed).length / routine.length) * 100);
 
             return (
-                <div className="min-h-screen p-4 md:p-8 bg-[#0a0b10]">
-                    <div className="max-w-3xl mx-auto pb-40">
-                        
-                        <div className="flex justify-between items-start mb-8 pt-4">
+                <div className="min-h-screen p-4 md:p-6 flex justify-center pb-12">
+                    <div className="w-full max-w-md">
+                        {/* Header */}
+                        <header className="mb-6 flex justify-between items-start px-1">
                             <div>
-                                <h1 className="text-4xl font-[900] text-red-600 tracking-tighter italic-force uppercase">VALOROUTINE</h1>
-                                <div className="flex items-center gap-2">
-                                    <p className="text-slate-500 text-[10px] font-black tracking-[0.3em] uppercase">Tactical Performance Cloud</p>
-                                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-900 text-slate-600 font-bold border border-slate-800">v3.0.0</span>
-                                </div>
+                                <h1 className="text-3xl font-[900] text-red-600 italic-force tracking-tighter uppercase leading-none">VALOROUTINE</h1>
+                                <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest mt-1.5">Optimization System <span className="text-red-500/50 ml-1">V5.0.0</span></p>
                             </div>
-                            
-                            <div className="flex items-center gap-2">
-                                <div className="flex gap-2 bg-slate-900/50 p-1.5 rounded-2xl border border-slate-800">
-                                    <button onClick={() => setActiveTab('daily')} className={`p-3 rounded-xl transition-all ${activeTab === 'daily' ? 'bg-red-600 text-white shadow-lg' : 'text-slate-500'}`}>
-                                        <LucideIcon name="check-square" />
-                                    </button>
-                                    <button onClick={() => setActiveTab('history')} className={`p-3 rounded-xl transition-all ${activeTab === 'history' ? 'bg-red-600 text-white shadow-lg' : 'text-slate-500'}`}>
-                                        <LucideIcon name="history" />
-                                    </button>
-                                </div>
+                            <div className="text-right">
+                                <div className="text-xl font-black text-white italic-force leading-none">{progress}%</div>
+                                <div className="text-[8px] font-bold text-slate-500 uppercase mt-1">Complete</div>
+                            </div>
+                        </header>
+
+                        {/* Top Navigation Tabs (Updated placement & History label) */}
+                        <div className="flex bg-slate-900/50 border border-slate-800/50 rounded-2xl p-1 mb-6">
+                            <button 
+                                onClick={() => setActiveTab('daily')} 
+                                className={`flex-1 py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all tab-btn ${activeTab === 'daily' ? 'active-tab' : 'text-slate-500'}`}
+                            >
+                                <LucideIcon name="crosshair" className="w-4 h-4" />
+                                <span className="text-[10px] font-black uppercase tracking-widest">Active</span>
+                            </button>
+                            <button 
+                                onClick={() => setActiveTab('history')} 
+                                className={`flex-1 py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all tab-btn ${activeTab === 'history' ? 'active-tab' : 'text-slate-500'}`}
+                            >
+                                <LucideIcon name="history" className="w-4 h-4" />
+                                <span className="text-[10px] font-black uppercase tracking-widest">History</span>
+                            </button>
+                            <button 
+                                onClick={() => setActiveTab('gear')} 
+                                className={`flex-1 py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all tab-btn ${activeTab === 'gear' ? 'active-tab' : 'text-slate-500'}`}
+                            >
+                                <MouseIcon className="w-4 h-4" />
+                                <span className="text-[10px] font-black uppercase tracking-widest">Gear</span>
+                            </button>
+                        </div>
+
+                        {/* Progress Bar */}
+                        <div className="bg-slate-900/40 border border-slate-800/50 p-1 rounded-full mb-6">
+                            <div className="h-1 w-full bg-black/40 rounded-full overflow-hidden">
+                                <div className="h-full bg-red-600 progress-glow transition-all duration-700" style={{ width: `${progress}%` }} />
                             </div>
                         </div>
 
-                        {activeTab === 'daily' ? (
-                            <div className="space-y-6">
-                                <div className="bg-gradient-to-br from-slate-900 to-slate-950 border border-slate-800 p-7 rounded-[2.5rem] relative overflow-hidden shadow-2xl">
-                                    <div className="flex justify-between items-end mb-4">
-                                        <div className="space-y-1">
-                                            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Efficiency</span>
-                                            <div className="text-sm font-bold text-slate-300">Daily Progression</div>
-                                        </div>
-                                        <span className="text-4xl font-black text-red-600 italic-force leading-none">{progressPercent}%</span>
-                                    </div>
-                                    <div className="h-5 w-full bg-black/40 rounded-full overflow-hidden p-1 border border-white/5">
-                                        <div className="h-full bg-red-600 rounded-full transition-all duration-700 progress-glow" style={{ width: `${progressPercent}%` }} />
-                                    </div>
-                                </div>
-
-                                <div className="space-y-4">
-                                    {routine.map(item => (
-                                        <div key={item.id} className={`task-card flex flex-col p-6 rounded-[2rem] border transition-all ${item.completed ? 'bg-slate-950/40 border-slate-900 opacity-40' : 'bg-slate-900 border-slate-800 shadow-xl'}`}>
-                                            <div className="flex items-center">
-                                                <div className={`mr-5 cursor-pointer transform active:scale-90 transition-transform ${item.completed ? 'text-emerald-500' : 'text-slate-700'}`} onClick={() => toggleTask(item.id)}>
-                                                    {item.completed ? <LucideIcon name="check-circle" className="w-9 h-9" /> : <div className="w-9 h-9 border-2 border-current rounded-2xl rotate-45" />}
+                        {activeTab === 'daily' && (
+                            <div className="space-y-3">
+                                {routine.map(item => (
+                                    <div key={item.id} className={`p-4 rounded-[1.25rem] border transition-all card-shadow ${item.completed ? 'bg-slate-950/40 border-slate-900 opacity-60' : 'bg-slate-900 border-slate-800'}`}>
+                                        <div className="flex items-start gap-3">
+                                            <button onClick={() => toggleTask(item.id)} className={`mt-0.5 flex-shrink-0 ${item.completed ? 'text-emerald-500' : 'text-slate-700'}`}>
+                                                <LucideIcon name={item.completed ? "check-circle" : "circle"} className="w-6 h-6" />
+                                            </button>
+                                            <div className="flex-1">
+                                                <div className="flex items-center gap-2 mb-0.5">
+                                                    <span className="text-[9px] font-black text-slate-500 uppercase tracking-tighter">{item.time}</span>
+                                                    <span className="text-[9px] bg-slate-950 px-1.5 py-0.5 rounded text-slate-400 font-bold border border-white/5 uppercase tracking-tighter">{item.duration}</span>
                                                 </div>
-                                                <div className="flex-1">
-                                                    <div className="flex justify-between items-center mb-1">
-                                                        <div className="flex items-center gap-3">
-                                                            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{item.time}</span>
-                                                            {/* REBUILT FOR IOS VISIBILITY: Standard line-height, no leading-none, added padding */}
-                                                            <div className="bg-slate-950/80 px-2 py-1 rounded border border-white/10 flex items-center justify-center min-w-[32px]">
-                                                                <span className="text-[11px] font-bold text-slate-300 ios-text-fix uppercase tracking-tight">
-                                                                    {item.duration}
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                        {item.completedAt && <span className="text-[8px] font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full uppercase">Logged at {item.completedAt}</span>}
-                                                    </div>
-                                                    <h3 className={`font-black text-xl uppercase tracking-tight ${item.completed ? 'line-through text-slate-600' : 'text-white'}`}>{item.task}</h3>
-                                                </div>
-                                            </div>
-                                            
-                                            {!item.completed && (
-                                                <div className="mt-4 ml-14 space-y-4">
-                                                    {item.subtasks && (
-                                                        <div className="space-y-2.5">
-                                                            {item.subtasks.map((sub, idx) => (
-                                                                <div key={idx} onClick={() => toggleSubtask(item.id, idx)} className="flex items-center gap-3 cursor-pointer group">
-                                                                    <div className={`w-4 h-4 rounded-md border flex items-center justify-center transition-all ${sub.done ? 'bg-emerald-500 border-emerald-500' : 'border-slate-700 group-hover:border-red-500'}`}>
-                                                                        {sub.done && <LucideIcon name="check" className="w-3 h-3 text-white" />}
-                                                                    </div>
-                                                                    <span className={`text-[11px] font-black uppercase tracking-wider ${sub.done ? 'text-slate-600 line-through' : 'text-slate-400 group-hover:text-white'}`}>{sub.label}</span>
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    )}
-                                                    <div className="pt-2 border-t border-slate-800/50">
-                                                        <p className="text-[10px] text-slate-500 font-bold italic">{item.purpose}</p>
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
-
-                                <div className="mt-12 bg-slate-900 border-2 border-slate-800 rounded-[3rem] p-8 shadow-2xl">
-                                    <div className="flex items-center gap-3 mb-8">
-                                        <div className="bg-red-600 p-2 rounded-xl">
-                                            <LucideIcon name="bar-chart" className="text-white w-5 h-5" />
-                                        </div>
-                                        <h3 className="text-xl font-black uppercase tracking-tighter italic-force">Analytics</h3>
-                                    </div>
-
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                        <div className="space-y-4">
-                                            <div className="space-y-2">
-                                                <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-2">Rank</label>
-                                                <select 
-                                                    value={sessionData.rank}
-                                                    onChange={(e) => updateSession('rank', e.target.value)}
-                                                    className="w-full bg-slate-950 border border-slate-800 text-white rounded-2xl px-5 py-3.5 font-bold text-sm outline-none focus:border-red-600 transition-colors"
-                                                >
-                                                    {ranks.map(r => <option key={r} value={r}>{r}</option>)}
-                                                </select>
-                                            </div>
-                                            <div className="space-y-2">
-                                                <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest ml-2">Sleep</label>
-                                                <select 
-                                                    value={sessionData.sleep}
-                                                    onChange={(e) => updateSession('sleep', e.target.value)}
-                                                    className="w-full bg-slate-950 border border-slate-800 text-white rounded-2xl px-5 py-3.5 font-bold text-sm outline-none focus:border-red-600 transition-colors"
-                                                >
-                                                    <option>Excellent (8h+ Deep)</option>
-                                                    <option>Good (7h+ Rested)</option>
-                                                    <option>Average (6h-7h)</option>
-                                                    <option>Poor (Fragmented)</option>
-                                                    <option>Insomnia / Tired</option>
-                                                </select>
+                                                <h3 className={`font-black text-md uppercase tracking-tight leading-tight ${item.completed ? 'text-slate-600 line-through' : 'text-white'}`}>{item.task}</h3>
                                             </div>
                                         </div>
-
-                                        <div className="flex justify-around items-center pt-4">
-                                            <div className="text-center">
-                                                <label className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1 block">Wins</label>
-                                                <input 
-                                                    type="number" 
-                                                    value={sessionData.wins} 
-                                                    onChange={(e) => updateSession('wins', parseInt(e.target.value) || 0)}
-                                                    className="w-20 bg-transparent text-center font-black text-5xl text-emerald-400 outline-none italic-force border-b border-emerald-500/10 focus:border-emerald-500"
-                                                />
+                                        {!item.completed && item.subtasks && (
+                                            <div className="mt-3 space-y-2">
+                                                {item.subtasks.map((sub, idx) => (
+                                                    <button key={idx} onClick={() => toggleSubtask(item.id, idx)} className={`w-full py-3 px-4 rounded-xl text-left flex items-center justify-between transition-all ${sub.done ? 'bg-emerald-500/10 border border-emerald-500/20' : 'bg-black/30 border border-white/5'}`}>
+                                                        <span className={`text-[11px] font-bold uppercase tracking-wide ${sub.done ? 'text-emerald-400' : 'text-slate-300'}`}>{sub.label}</span>
+                                                        {sub.done && <LucideIcon name="check" className="w-3.5 h-3.5 text-emerald-400" />}
+                                                    </button>
+                                                ))}
                                             </div>
-                                            <div className="h-12 w-px bg-slate-800"></div>
-                                            <div className="text-center">
-                                                <label className="text-[10px] font-black text-red-500 uppercase tracking-widest mb-1 block">Losses</label>
-                                                <input 
-                                                    type="number" 
-                                                    value={sessionData.losses} 
-                                                    onChange={(e) => updateSession('losses', parseInt(e.target.value) || 0)}
-                                                    className="w-20 bg-transparent text-center font-black text-5xl text-red-400 outline-none italic-force border-b border-red-500/10 focus:border-red-500"
-                                                />
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="mt-8 flex items-center gap-6 p-6 bg-slate-950/50 border border-slate-800/50 rounded-3xl">
-                                        <div className="flex-1 space-y-2">
-                                            <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest">RR</label>
-                                            <input 
-                                                type="number" 
-                                                value={sessionData.currentRR} 
-                                                onChange={(e) => updateSession('currentRR', parseInt(e.target.value) || 0)}
-                                                className="w-full bg-transparent border-b border-slate-800 text-white font-black text-2xl outline-none py-1 focus:border-red-600 transition-colors"
-                                            />
-                                        </div>
-                                        <div className="flex-1 space-y-2">
-                                            <label className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Gain/Loss</label>
-                                            <input 
-                                                type="number" 
-                                                value={sessionData.rrDiff} 
-                                                onChange={(e) => updateSession('rrDiff', parseInt(e.target.value) || 0)}
-                                                className={`w-full bg-transparent border-b border-slate-800 font-black text-2xl outline-none py-1 focus:border-red-600 transition-colors ${sessionData.rrDiff >= 0 ? 'text-emerald-500' : 'text-red-500'}`}
-                                            />
-                                        </div>
-                                    </div>
-                                    
-                                    <button 
-                                        onClick={submitSession}
-                                        className="w-full mt-8 py-4 bg-red-600 hover:bg-red-500 text-white font-[900] uppercase italic-force tracking-widest rounded-2xl shadow-xl shadow-red-600/20 transition-all active:scale-[0.98]"
-                                    >
-                                        SUBMIT DAILY SESSION
-                                    </button>
-                                </div>
-                            </div>
-                        ) : (
-                            <div className="space-y-8 animate-in fade-in duration-500">
-                                <div className="flex justify-between items-center">
-                                    <h2 className="text-2xl font-black text-white italic-force uppercase tracking-tighter">Archive</h2>
-                                    <div className="flex items-center gap-4">
-                                        <button onClick={forceRefresh} className="flex items-center gap-1.5 text-[10px] font-black text-slate-500 uppercase tracking-widest hover:text-white transition-colors">
-                                            <LucideIcon name="refresh-cw" className="w-3 h-3" />
-                                            Force Refresh
-                                        </button>
-                                        {history.length > 0 && (
-                                            <button onClick={clearHistory} className="text-[10px] font-black text-red-600 uppercase tracking-widest">Clear All</button>
                                         )}
                                     </div>
-                                </div>
-                                
-                                {history.length === 0 ? (
-                                    <div className="bg-slate-900 border border-slate-800 p-12 rounded-[3rem] text-center">
-                                        <LucideIcon name="clipboard-list" className="w-12 h-12 text-slate-700 mx-auto mb-4" />
-                                        <p className="text-slate-500 font-bold uppercase text-xs tracking-widest">No logs found</p>
-                                    </div>
-                                ) : (
-                                    <div className="space-y-6">
-                                        {history.map(record => (
-                                            <div key={record.id} className="bg-slate-900 border border-slate-800 rounded-[2.5rem] overflow-hidden shadow-xl">
-                                                <div className="bg-slate-950 p-6 flex justify-between items-center border-b border-slate-800">
-                                                    <div>
-                                                        <div className="text-[10px] font-black text-red-600 uppercase tracking-widest">Date</div>
-                                                        <div className="text-sm font-black text-white">{record.date} @ {record.timestamp}</div>
-                                                    </div>
-                                                    <div className="text-right">
-                                                        <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Ending Rank</div>
-                                                        <div className="text-sm font-black text-emerald-500 italic-force">{record.stats.rank} ({record.stats.currentRR}RR)</div>
-                                                    </div>
-                                                </div>
-                                                <div className="p-6">
-                                                    <div className="flex gap-4 mb-6">
-                                                        <div className="flex-1 text-center border-r border-slate-800">
-                                                            <div className="text-[8px] font-black text-slate-500 uppercase">Sleep</div>
-                                                            <div className="text-[11px] font-bold text-slate-300">{record.stats.sleep}</div>
-                                                        </div>
-                                                        <div className="flex-1 text-center">
-                                                            <div className="text-[8px] font-black text-slate-500 uppercase">Result</div>
-                                                            <div className="text-[11px] font-bold text-slate-300 uppercase">
-                                                                <span className="text-emerald-500">{record.stats.wins}W</span> - <span className="text-red-500">{record.stats.losses}L</span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <div>
-                                                        <h4 className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-2">
-                                                            <LucideIcon name="alert-circle" className="w-3 h-3 text-red-600" />
-                                                            Missed Objectives
-                                                        </h4>
-                                                        <div className="space-y-2">
-                                                            {record.missedTasks.length > 0 ? record.missedTasks.map((t, idx) => (
-                                                                <div key={idx} className="flex justify-between items-center bg-black/20 p-3 rounded-xl border border-white/5">
-                                                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">{t.task}</span>
-                                                                    <span className="text-[9px] font-bold text-slate-600 italic-force">{t.time}</span>
-                                                                </div>
-                                                            )) : (
-                                                                <div className="text-[10px] font-black text-emerald-500/50 uppercase italic-force">100% Efficiency Session</div>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                </div>
+                                ))}
+
+                                {/* Post-Session Analysis */}
+                                <div className="bg-red-600/5 border border-red-600/20 p-5 rounded-[1.5rem] mt-6">
+                                    <h2 className="text-md font-black italic-force uppercase text-red-500 mb-4 flex items-center gap-2">
+                                        <LucideIcon name="bar-chart" className="w-4 h-4"/> Post-Session Analysis
+                                    </h2>
+                                    <div className="space-y-4">
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div className="space-y-1.5">
+                                                <label className="text-[8px] font-black text-slate-500 uppercase tracking-widest ml-1">Rank</label>
+                                                <select value={stats.rank} onChange={(e) => updateStat('rank', e.target.value)} className="w-full bg-slate-950 border border-slate-800 p-3 rounded-xl text-xs font-bold text-white outline-none">
+                                                    {RANKS.map(r => <option key={r} value={r}>{r}</option>)}
+                                                </select>
                                             </div>
-                                        ))}
+                                            <div className="space-y-1.5">
+                                                <label className="text-[8px] font-black text-slate-500 uppercase tracking-widest ml-1">Current RR</label>
+                                                <input type="number" value={stats.currentRR} onChange={(e) => updateStat('currentRR', e.target.value)} className="w-full bg-slate-950 border border-slate-800 p-3 rounded-xl text-xs font-bold text-white outline-none" />
+                                            </div>
+                                        </div>
+                                        <div className="grid grid-cols-3 gap-2">
+                                            {['wins', 'losses', 'rrDelta'].map(key => (
+                                                <div key={key} className="bg-slate-950 p-3 rounded-xl border border-slate-800 text-center">
+                                                    <span className="text-[8px] font-black text-slate-500 uppercase block mb-1">{key === 'rrDelta' ? 'RR Δ' : key}</span>
+                                                    <input type="number" value={stats[key]} onChange={(e) => updateStat(key, e.target.value)} className="bg-transparent text-sm font-black text-white w-full text-center outline-none" />
+                                                </div>
+                                            ))}
+                                        </div>
                                     </div>
-                                )}
+                                </div>
                             </div>
                         )}
 
-                        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 w-[calc(100%-3rem)] max-w-sm z-40">
-                             <div className="bg-slate-900/80 backdrop-blur-xl border border-white/5 p-2 rounded-[2.5rem] shadow-2xl flex justify-around">
-                                <button onClick={() => setActiveTab('daily')} className={`flex-1 py-4 flex flex-col items-center gap-1 transition-all ${activeTab === 'daily' ? 'text-white' : 'text-slate-500'}`}>
-                                    <LucideIcon name="list" className="w-5 h-5" />
-                                    <span className="text-[8px] font-black uppercase tracking-widest">Routine</span>
-                                </button>
-                                <button onClick={() => setActiveTab('history')} className={`flex-1 py-4 flex flex-col items-center gap-1 transition-all ${activeTab === 'history' ? 'text-white' : 'text-slate-500'}`}>
-                                    <LucideIcon name="history" className="w-5 h-5" />
-                                    <span className="text-[8px] font-black uppercase tracking-widest">History</span>
-                                </button>
-                             </div>
-                        </div>
+                        {activeTab === 'gear' && (
+                            <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                                <div className="bg-slate-900 border border-slate-800 p-5 rounded-[1.5rem]">
+                                    <h2 className="text-md font-black italic-force uppercase text-white mb-6 flex items-center gap-2">
+                                        <MouseIcon className="w-4 h-4" /> Input & Hardware
+                                    </h2>
+                                    <div className="space-y-4">
+                                        {[
+                                            { label: 'Mouse', key: 'mouse' },
+                                            { label: 'Sensitivity', key: 'sens' },
+                                            { label: 'DPI', key: 'dpi' },
+                                            { label: 'Polling', key: 'polling' },
+                                            { label: 'Win Sens', key: 'winSens' }
+                                        ].map(item => (
+                                            <div key={item.key} className="flex items-center justify-between border-b border-slate-800/30 pb-2">
+                                                <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">{item.label}</span>
+                                                <input value={gear[item.key]} onChange={(e) => setGear(prev => ({ ...prev, [item.key]: e.target.value }))} className="bg-transparent text-right font-bold text-white outline-none text-xs" />
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                                
+                                <div className="bg-slate-900 border border-slate-800 p-5 rounded-[1.5rem]">
+                                    <h2 className="text-md font-black italic-force uppercase text-white mb-6 flex items-center gap-2">
+                                        <LucideIcon name="monitor" className="w-4 h-4" /> Video
+                                    </h2>
+                                    <div className="space-y-4">
+                                        {[
+                                            { label: 'Resolution', key: 'res' },
+                                            { label: 'Hz', key: 'hz' }
+                                        ].map(item => (
+                                            <div key={item.key} className="flex items-center justify-between border-b border-slate-800/30 pb-2">
+                                                <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">{item.label}</span>
+                                                <input value={gear[item.key]} onChange={(e) => setGear(prev => ({ ...prev, [item.key]: e.target.value }))} className="bg-transparent text-right font-bold text-white outline-none text-xs" />
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === 'history' && (
+                            <div className="flex flex-col items-center justify-center py-20 text-slate-800">
+                                <LucideIcon name="history" className="w-12 h-12 mb-3 opacity-10" />
+                                <p className="text-[9px] font-black uppercase tracking-[0.3em] opacity-40">Tactical Logs Empty</p>
+                                <p className="text-[8px] font-bold text-slate-900 uppercase mt-1 italic">V5.0.0 Alpha Build</p>
+                            </div>
+                        )}
                     </div>
                 </div>
             );
