@@ -27,12 +27,11 @@
         }
 
         .italic-force { font-style: italic; }
-        .progress-glow { box-shadow: 0 0 20px rgba(220, 38, 38, 0.4); }
-        .ios-text-fix { -webkit-font-smoothing: antialiased; line-height: 1.5 !important; }
-        .card-shadow { box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5); }
+        .progress-glow { box-shadow: 0 0 15px rgba(220, 38, 38, 0.3); }
+        .card-shadow { box-shadow: 0 4px 20px -5px rgba(0,0,0,0.5); }
         
-        .tab-btn { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-        .active-tab { color: #ef4444; background: rgba(239, 68, 68, 0.1); }
+        .tab-btn { transition: all 0.2s ease; }
+        .active-tab { color: #ef4444; background: rgba(239, 68, 68, 0.08); }
         
         input[type="number"]::-webkit-inner-spin-button,
         input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
@@ -41,8 +40,8 @@
             appearance: none;
             background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
             background-repeat: no-repeat;
-            background-position: right 1rem center;
-            background-size: 1em;
+            background-position: right 0.75rem center;
+            background-size: 0.8em;
         }
     </style>
 </head>
@@ -60,20 +59,23 @@
         ];
 
         const INITIAL_ROUTINE = [
-            { id: 1, time: '10:30 AM', duration: '15m', task: 'Wake Up', completed: false, purpose: 'Reset circadian rhythm.', subtasks: [{ label: 'Drink water', done: false }, { label: 'Sunlight Exposure', done: false }, { label: 'Brush teeth', done: false }] },
-            { id: 2, time: '10:45 AM', duration: '15m', task: 'Morning Activation', completed: false, purpose: 'Improves mouse control.', subtasks: [{ label: '15 pushups', done: false }, { label: '20 squats', done: false }, { label: 'Wrist mobility', done: false }] },
-            { id: 3, time: '11:00 AM', duration: '30m', task: 'Breakfast', completed: false, purpose: 'Avoid heavy carbs.', subtasks: [{ label: 'High Protein Meal', done: false }, { label: 'Hydrate', done: false }] },
-            { id: 4, time: '11:30 AM', duration: '1h', task: 'Life Tasks', completed: false, purpose: 'Productivity window.' },
-            { id: 5, time: '12:30 PM', duration: '45m', task: 'Mechanical Training', completed: false, purpose: 'Warm brain + coordination.', subtasks: [{ label: 'Flick training', done: false }, { label: 'Tracking training', done: false }] },
-            { id: 6, time: '1:30 PM', duration: '2h', task: 'Ranked Block 1', completed: false, purpose: 'Peak performance window.' },
-            { id: 7, time: '3:30 PM', duration: '1h', task: 'Hard Reset Break', completed: false, purpose: 'Avoid mental fatigue.' },
-            { id: 8, time: '4:30 PM', duration: '1.5h', task: 'Ranked Block 2', completed: false, purpose: 'Positioning focus.' },
-            { id: 9, time: '6:00 PM', duration: '1h', task: 'Cardio', completed: false, purpose: 'Stress reduction.' },
-            { id: 11, time: '8:30 PM', duration: '1.5h', task: 'Ranked Block 3', completed: false, purpose: 'Night session.' },
-            { id: 15, time: '12:30 AM', duration: 'N/A', task: 'Sleep Attempt', completed: false, purpose: 'Recovery.' }
+            { id: 1, time: '10:30 AM', duration: '15m', task: 'Wake Up', completed: true, purpose: 'Reset circadian rhythm.', subtasks: [{ label: 'Drink water', done: true }, { label: 'Sunlight Exposure', done: true }, { label: 'Brush teeth', done: true }] },
+            { id: 2, time: '10:45 AM', duration: '15m', task: 'Morning Activation', completed: true, purpose: 'Improves mouse control.', subtasks: [{ label: '15 pushups', done: true }, { label: '20 squats', done: true }, { label: '30s Plank', done: true }, { label: 'Wrist mobility', done: true }] },
+            { id: 3, time: '11:00 AM', duration: '30m', task: 'Breakfast', completed: true, purpose: 'Avoid heavy carbs.', subtasks: [{ label: 'High Protein Meal', done: true }, { label: 'Hydrate', done: true }] },
+            { id: 4, time: '11:30 AM', duration: '1h', task: 'Life Tasks', completed: true, purpose: 'Productivity window.' },
+            { id: 5, time: '12:30 PM', duration: '45m', task: 'Mechanical Training', completed: true, purpose: 'Warm brain + coordination.', subtasks: [{ label: 'Flick training', done: true }, { label: 'Tracking training', done: true }] },
+            { id: 6, time: '1:30 PM', duration: '2h', task: 'Ranked Block 1', completed: true, purpose: 'Peak performance window.' },
+            { id: 7, time: '3:30 PM', duration: '30m', task: 'Midday Activation', completed: true, purpose: 'Blood flow for focus.', subtasks: [{ label: '15 pushups', done: true }, { label: '20 Lunges', done: true }, { label: '30s Plank', done: true }, { label: 'Shoulder mobility', done: true }] },
+            { id: 8, time: '4:00 PM', duration: '1h', task: 'Hard Reset Break', completed: true, purpose: 'Avoid mental fatigue.' },
+            { id: 9, time: '5:00 PM', duration: '1.5h', task: 'Ranked Block 2', completed: true, purpose: 'Positioning focus.' },
+            { id: 10, time: '6:30 PM', duration: '1h', task: 'Cardio', completed: true, purpose: 'Stress reduction.' },
+            { id: 11, time: '8:30 PM', duration: '1.5h', task: 'Ranked Block 3', completed: true, purpose: 'Night session.' },
+            { id: 12, time: '10:00 PM', duration: '30m', task: 'Night Activation', completed: true, purpose: 'Evening core stability.', subtasks: [{ label: '15 Glute bridges', done: true }, { label: '30s Plank', done: true }, { label: 'Cat-Cow stretch', done: true }] },
+            { id: 13, time: '11:30 PM', duration: '1h', task: 'Winding Down', completed: true, purpose: 'Blue light reduction.' },
+            { id: 15, time: '12:30 AM', duration: 'N/A', task: 'Sleep Attempt', completed: true, purpose: 'Recovery.' }
         ];
 
-        const LucideIcon = ({ name, className = "w-5 h-5" }) => {
+        const LucideIcon = ({ name, className = "w-4 h-4" }) => {
             const containerRef = useRef(null);
             useEffect(() => {
                 if (containerRef.current && window.lucide) {
@@ -107,9 +109,7 @@
                     pad: 'Artisan Zero', 
                     hz: '240Hz',
                     res: '1920x1080',
-                    rawInput: 'On',
                     polling: '1000Hz',
-                    hrtf: 'On',
                     winSens: '6/11'
                 };
             });
@@ -150,74 +150,66 @@
             const progress = Math.round((routine.filter(t => t.completed).length / routine.length) * 100);
 
             return (
-                <div className="min-h-screen p-4 md:p-6 flex justify-center pb-12">
+                <div className="min-h-screen p-3 md:p-6 flex justify-center pb-8">
                     <div className="w-full max-w-md">
-                        {/* Header */}
-                        <header className="mb-6 flex justify-between items-start px-1">
+                        {/* Header - Thinner */}
+                        <header className="mb-4 flex justify-between items-end px-1">
                             <div>
-                                <h1 className="text-3xl font-[900] text-red-600 italic-force tracking-tighter uppercase leading-none">VALOROUTINE</h1>
-                                <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest mt-1.5">Optimization System <span className="text-red-500/50 ml-1">V5.0.0</span></p>
+                                <h1 className="text-2xl font-[900] text-red-600 italic-force tracking-tighter uppercase leading-none">VALOROUTINE</h1>
+                                <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest mt-1">Optimization System <span className="text-red-500/50 ml-1">V5.0</span></p>
                             </div>
                             <div className="text-right">
-                                <div className="text-xl font-black text-white italic-force leading-none">{progress}%</div>
-                                <div className="text-[8px] font-bold text-slate-500 uppercase mt-1">Complete</div>
+                                <div className="text-lg font-black text-white italic-force">{progress}%</div>
                             </div>
                         </header>
 
-                        {/* Top Navigation Tabs (Updated placement & History label) */}
-                        <div className="flex bg-slate-900/50 border border-slate-800/50 rounded-2xl p-1 mb-6">
-                            <button 
-                                onClick={() => setActiveTab('daily')} 
-                                className={`flex-1 py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all tab-btn ${activeTab === 'daily' ? 'active-tab' : 'text-slate-500'}`}
-                            >
-                                <LucideIcon name="crosshair" className="w-4 h-4" />
-                                <span className="text-[10px] font-black uppercase tracking-widest">Active</span>
-                            </button>
-                            <button 
-                                onClick={() => setActiveTab('history')} 
-                                className={`flex-1 py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all tab-btn ${activeTab === 'history' ? 'active-tab' : 'text-slate-500'}`}
-                            >
-                                <LucideIcon name="history" className="w-4 h-4" />
-                                <span className="text-[10px] font-black uppercase tracking-widest">History</span>
-                            </button>
-                            <button 
-                                onClick={() => setActiveTab('gear')} 
-                                className={`flex-1 py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all tab-btn ${activeTab === 'gear' ? 'active-tab' : 'text-slate-500'}`}
-                            >
-                                <MouseIcon className="w-4 h-4" />
-                                <span className="text-[10px] font-black uppercase tracking-widest">Gear</span>
-                            </button>
+                        {/* Navigation - Thinner vertically */}
+                        <div className="flex bg-slate-900/50 border border-slate-800/50 rounded-xl p-0.5 mb-4">
+                            {[
+                                { id: 'daily', icon: 'crosshair', label: 'Active' },
+                                { id: 'history', icon: 'history', label: 'History' },
+                                { id: 'gear', icon: 'mouse', label: 'Gear' }
+                            ].map(tab => (
+                                <button 
+                                    key={tab.id}
+                                    onClick={() => setActiveTab(tab.id)} 
+                                    className={`flex-1 py-1.5 rounded-lg flex items-center justify-center gap-1.5 transition-all tab-btn ${activeTab === tab.id ? 'active-tab' : 'text-slate-500'}`}
+                                >
+                                    {tab.icon === 'mouse' ? <MouseIcon className="w-3.5 h-3.5" /> : <LucideIcon name={tab.icon} className="w-3.5 h-3.5" />}
+                                    <span className="text-[9px] font-black uppercase tracking-wider">{tab.label}</span>
+                                </button>
+                            ))}
                         </div>
 
-                        {/* Progress Bar */}
-                        <div className="bg-slate-900/40 border border-slate-800/50 p-1 rounded-full mb-6">
-                            <div className="h-1 w-full bg-black/40 rounded-full overflow-hidden">
+                        {/* Progress - Thinner */}
+                        <div className="bg-slate-900/40 border border-slate-800/50 p-0.5 rounded-full mb-4">
+                            <div className="h-0.5 w-full bg-black/40 rounded-full overflow-hidden">
                                 <div className="h-full bg-red-600 progress-glow transition-all duration-700" style={{ width: `${progress}%` }} />
                             </div>
                         </div>
 
                         {activeTab === 'daily' && (
-                            <div className="space-y-3">
+                            <div className="space-y-2">
                                 {routine.map(item => (
-                                    <div key={item.id} className={`p-4 rounded-[1.25rem] border transition-all card-shadow ${item.completed ? 'bg-slate-950/40 border-slate-900 opacity-60' : 'bg-slate-900 border-slate-800'}`}>
-                                        <div className="flex items-start gap-3">
+                                    <div key={item.id} className={`p-3 rounded-xl border transition-all card-shadow ${item.completed ? 'bg-slate-950/40 border-slate-900 opacity-60' : 'bg-slate-900 border-slate-800'}`}>
+                                        <div className="flex items-start gap-2.5">
                                             <button onClick={() => toggleTask(item.id)} className={`mt-0.5 flex-shrink-0 ${item.completed ? 'text-emerald-500' : 'text-slate-700'}`}>
-                                                <LucideIcon name={item.completed ? "check-circle" : "circle"} className="w-6 h-6" />
+                                                <LucideIcon name={item.completed ? "check-circle" : "circle"} className="w-5 h-5" />
                                             </button>
                                             <div className="flex-1">
                                                 <div className="flex items-center gap-2 mb-0.5">
-                                                    <span className="text-[9px] font-black text-slate-500 uppercase tracking-tighter">{item.time}</span>
-                                                    <span className="text-[9px] bg-slate-950 px-1.5 py-0.5 rounded text-slate-400 font-bold border border-white/5 uppercase tracking-tighter">{item.duration}</span>
+                                                    <span className="text-[8px] font-black text-slate-500 uppercase tracking-tighter">{item.time}</span>
+                                                    <span className="text-[8px] text-slate-400 font-bold uppercase">{item.duration}</span>
                                                 </div>
-                                                <h3 className={`font-black text-md uppercase tracking-tight leading-tight ${item.completed ? 'text-slate-600 line-through' : 'text-white'}`}>{item.task}</h3>
+                                                <h3 className={`font-black text-sm uppercase tracking-tight leading-none ${item.completed ? 'text-slate-600 line-through' : 'text-white'}`}>{item.task}</h3>
                                             </div>
                                         </div>
                                         {!item.completed && item.subtasks && (
-                                            <div className="mt-3 space-y-2">
+                                            <div className="mt-2 grid grid-cols-1 gap-1">
                                                 {item.subtasks.map((sub, idx) => (
-                                                    <button key={idx} onClick={() => toggleSubtask(item.id, idx)} className={`w-full py-3 px-4 rounded-xl text-left flex items-center justify-between transition-all ${sub.done ? 'bg-emerald-500/10 border border-emerald-500/20' : 'bg-black/30 border border-white/5'}`}>
-                                                        <span className={`text-[11px] font-bold uppercase tracking-wide ${sub.done ? 'text-emerald-400' : 'text-slate-300'}`}>{sub.label}</span>
-                                                        {sub.done && <LucideIcon name="check" className="w-3.5 h-3.5 text-emerald-400" />}
+                                                    <button key={idx} onClick={() => toggleSubtask(item.id, idx)} className={`w-full py-2 px-3 rounded-lg text-left flex items-center justify-between transition-all ${sub.done ? 'bg-emerald-500/10 border border-emerald-500/20' : 'bg-black/30 border border-white/5'}`}>
+                                                        <span className={`text-[10px] font-bold uppercase tracking-wide ${sub.done ? 'text-emerald-400' : 'text-slate-400'}`}>{sub.label}</span>
+                                                        {sub.done && <LucideIcon name="check" className="w-3 h-3 text-emerald-400" />}
                                                     </button>
                                                 ))}
                                             </div>
@@ -225,29 +217,29 @@
                                     </div>
                                 ))}
 
-                                {/* Post-Session Analysis */}
-                                <div className="bg-red-600/5 border border-red-600/20 p-5 rounded-[1.5rem] mt-6">
-                                    <h2 className="text-md font-black italic-force uppercase text-red-500 mb-4 flex items-center gap-2">
-                                        <LucideIcon name="bar-chart" className="w-4 h-4"/> Post-Session Analysis
+                                {/* Post-Session - Thinner inputs */}
+                                <div className="bg-red-600/5 border border-red-600/10 p-4 rounded-2xl mt-4">
+                                    <h2 className="text-xs font-black italic-force uppercase text-red-500 mb-3 flex items-center gap-2">
+                                        <LucideIcon name="bar-chart" className="w-3.5 h-3.5"/> Session Analysis
                                     </h2>
-                                    <div className="space-y-4">
-                                        <div className="grid grid-cols-2 gap-3">
-                                            <div className="space-y-1.5">
-                                                <label className="text-[8px] font-black text-slate-500 uppercase tracking-widest ml-1">Rank</label>
-                                                <select value={stats.rank} onChange={(e) => updateStat('rank', e.target.value)} className="w-full bg-slate-950 border border-slate-800 p-3 rounded-xl text-xs font-bold text-white outline-none">
+                                    <div className="space-y-3">
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <div className="space-y-1">
+                                                <label className="text-[7px] font-black text-slate-500 uppercase tracking-widest ml-1">Rank</label>
+                                                <select value={stats.rank} onChange={(e) => updateStat('rank', e.target.value)} className="w-full bg-slate-950 border border-slate-800 px-2 py-1.5 rounded-lg text-[10px] font-bold text-white outline-none">
                                                     {RANKS.map(r => <option key={r} value={r}>{r}</option>)}
                                                 </select>
                                             </div>
-                                            <div className="space-y-1.5">
-                                                <label className="text-[8px] font-black text-slate-500 uppercase tracking-widest ml-1">Current RR</label>
-                                                <input type="number" value={stats.currentRR} onChange={(e) => updateStat('currentRR', e.target.value)} className="w-full bg-slate-950 border border-slate-800 p-3 rounded-xl text-xs font-bold text-white outline-none" />
+                                            <div className="space-y-1">
+                                                <label className="text-[7px] font-black text-slate-500 uppercase tracking-widest ml-1">RR</label>
+                                                <input type="number" value={stats.currentRR} onChange={(e) => updateStat('currentRR', e.target.value)} className="w-full bg-slate-950 border border-slate-800 px-2 py-1.5 rounded-lg text-[10px] font-bold text-white outline-none" />
                                             </div>
                                         </div>
                                         <div className="grid grid-cols-3 gap-2">
                                             {['wins', 'losses', 'rrDelta'].map(key => (
-                                                <div key={key} className="bg-slate-950 p-3 rounded-xl border border-slate-800 text-center">
-                                                    <span className="text-[8px] font-black text-slate-500 uppercase block mb-1">{key === 'rrDelta' ? 'RR Δ' : key}</span>
-                                                    <input type="number" value={stats[key]} onChange={(e) => updateStat(key, e.target.value)} className="bg-transparent text-sm font-black text-white w-full text-center outline-none" />
+                                                <div key={key} className="bg-slate-950 px-2 py-1.5 rounded-lg border border-slate-800 text-center">
+                                                    <span className="text-[7px] font-black text-slate-500 uppercase block mb-0.5">{key === 'rrDelta' ? 'RR Δ' : key}</span>
+                                                    <input type="number" value={stats[key]} onChange={(e) => updateStat(key, e.target.value)} className="bg-transparent text-[10px] font-black text-white w-full text-center outline-none" />
                                                 </div>
                                             ))}
                                         </div>
@@ -257,39 +249,23 @@
                         )}
 
                         {activeTab === 'gear' && (
-                            <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                                <div className="bg-slate-900 border border-slate-800 p-5 rounded-[1.5rem]">
-                                    <h2 className="text-md font-black italic-force uppercase text-white mb-6 flex items-center gap-2">
-                                        <MouseIcon className="w-4 h-4" /> Input & Hardware
+                            <div className="space-y-3 animate-in fade-in slide-in-from-bottom-1 duration-200">
+                                <div className="bg-slate-900 border border-slate-800 px-4 py-3 rounded-2xl">
+                                    <h2 className="text-xs font-black italic-force uppercase text-white mb-4 flex items-center gap-2">
+                                        <MouseIcon className="w-3.5 h-3.5" /> Hardware
                                     </h2>
-                                    <div className="space-y-4">
+                                    <div className="space-y-2">
                                         {[
                                             { label: 'Mouse', key: 'mouse' },
                                             { label: 'Sensitivity', key: 'sens' },
                                             { label: 'DPI', key: 'dpi' },
                                             { label: 'Polling', key: 'polling' },
-                                            { label: 'Win Sens', key: 'winSens' }
-                                        ].map(item => (
-                                            <div key={item.key} className="flex items-center justify-between border-b border-slate-800/30 pb-2">
-                                                <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">{item.label}</span>
-                                                <input value={gear[item.key]} onChange={(e) => setGear(prev => ({ ...prev, [item.key]: e.target.value }))} className="bg-transparent text-right font-bold text-white outline-none text-xs" />
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                                
-                                <div className="bg-slate-900 border border-slate-800 p-5 rounded-[1.5rem]">
-                                    <h2 className="text-md font-black italic-force uppercase text-white mb-6 flex items-center gap-2">
-                                        <LucideIcon name="monitor" className="w-4 h-4" /> Video
-                                    </h2>
-                                    <div className="space-y-4">
-                                        {[
                                             { label: 'Resolution', key: 'res' },
                                             { label: 'Hz', key: 'hz' }
                                         ].map(item => (
-                                            <div key={item.key} className="flex items-center justify-between border-b border-slate-800/30 pb-2">
-                                                <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">{item.label}</span>
-                                                <input value={gear[item.key]} onChange={(e) => setGear(prev => ({ ...prev, [item.key]: e.target.value }))} className="bg-transparent text-right font-bold text-white outline-none text-xs" />
+                                            <div key={item.key} className="flex items-center justify-between border-b border-slate-800/20 pb-1.5">
+                                                <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">{item.label}</span>
+                                                <input value={gear[item.key]} onChange={(e) => setGear(prev => ({ ...prev, [item.key]: e.target.value }))} className="bg-transparent text-right font-bold text-white outline-none text-[10px] w-1/2" />
                                             </div>
                                         ))}
                                     </div>
@@ -298,10 +274,9 @@
                         )}
 
                         {activeTab === 'history' && (
-                            <div className="flex flex-col items-center justify-center py-20 text-slate-800">
-                                <LucideIcon name="history" className="w-12 h-12 mb-3 opacity-10" />
-                                <p className="text-[9px] font-black uppercase tracking-[0.3em] opacity-40">Tactical Logs Empty</p>
-                                <p className="text-[8px] font-bold text-slate-900 uppercase mt-1 italic">V5.0.0 Alpha Build</p>
+                            <div className="flex flex-col items-center justify-center py-12 text-slate-800">
+                                <LucideIcon name="history" className="w-8 h-8 mb-2 opacity-10" />
+                                <p className="text-[8px] font-black uppercase tracking-[0.2em] opacity-30">No Logs Found</p>
                             </div>
                         )}
                     </div>
