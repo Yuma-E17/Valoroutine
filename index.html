@@ -41,16 +41,14 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useRef } = React;
+        const { useState, useEffect, useRef, useMemo } = React;
         
         // Firebase Config Handling
         const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'valo-climb-v1';
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'valo-climb-default';
         
         if (firebaseConfig.apiKey) {
-            if (!firebase.apps.length) {
-                firebase.initializeApp(firebaseConfig);
-            }
+            firebase.initializeApp(firebaseConfig);
         }
 
         const LucideIcon = ({ name, className = "w-5 h-5" }) => {
@@ -127,18 +125,30 @@
         const App = () => {
             const [activeTab, setActiveTab] = useState('daily');
             const [user, setUser] = useState(null);
-            const [history, setHistory] = useState([]);
-            const [routine, setRoutine] = useState(INITIAL_ROUTINE);
-            const [sessionData, setSessionData] = useState({
-                rank: 'Silver 2',
-                sleep: 'Good (7h+ Rested)',
-                wins: 0,
-                losses: 0,
-                currentRR: 22,
-                rrDiff: 0
+            
+            const [history, setHistory] = useState(() => {
+                const saved = localStorage.getItem('valoClimb_history');
+                return saved ? JSON.parse(saved) : [];
+            });
+            
+            const [routine, setRoutine] = useState(() => {
+                const saved = localStorage.getItem('valoClimb_routine');
+                return saved ? JSON.parse(saved) : INITIAL_ROUTINE;
             });
 
-            // Authentication Setup
+            const [sessionData, setSessionData] = useState(() => {
+                const saved = localStorage.getItem('valoClimb_sessionData');
+                return saved ? JSON.parse(saved) : {
+                    rank: 'Silver 2',
+                    sleep: 'Good (7h+ Rested)',
+                    wins: 0,
+                    losses: 0,
+                    currentRR: 22,
+                    rrDiff: 0
+                };
+            });
+
+            // Firebase Auth
             useEffect(() => {
                 if (!firebaseConfig.apiKey) return;
                 const auth = firebase.auth();
@@ -153,50 +163,45 @@
                 return auth.onAuthStateChanged(setUser);
             }, []);
 
-            // Firestore Data Listeners (Routine & Stats)
+            // Firestore Sync
             useEffect(() => {
                 if (!user || !firebaseConfig.apiKey) return;
                 const db = firebase.firestore();
-                const userDoc = db.collection('artifacts').doc(appId).collection('users').doc(user.uid);
-
-                // Listen for Routine & Session Stats
-                const unsubState = userDoc.onSnapshot((doc) => {
-                    if (doc.exists) {
-                        const data = doc.data();
-                        if (data.routine) setRoutine(data.routine);
-                        if (data.sessionData) setSessionData(data.sessionData);
+                const historyRef = db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('history');
+                
+                const unsubscribe = historyRef.onSnapshot((snapshot) => {
+                    const cloudHistory = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+                    if (cloudHistory.length > 0) {
+                        const sorted = cloudHistory.sort((a, b) => b.id - a.id);
+                        setHistory(sorted);
                     }
-                });
+                }, (error) => console.error("History sync failed:", error));
 
-                // Listen for History
-                const unsubHistory = userDoc.collection('history').onSnapshot((snapshot) => {
-                    const logs = snapshot.docs.map(d => ({ ...d.data(), id: d.id }));
-                    setHistory(logs.sort((a, b) => b.id - a.id));
-                });
-
-                return () => {
-                    unsubState();
-                    unsubHistory();
-                };
+                return () => unsubscribe();
             }, [user]);
 
-            // Sync Helper Function
-            const syncToCloud = async (newData, type) => {
-                if (!user || !firebaseConfig.apiKey) return;
-                const db = firebase.firestore();
-                const userDoc = db.collection('artifacts').doc(appId).collection('users').doc(user.uid);
-                
-                try {
-                    if (type === 'routine') await userDoc.set({ routine: newData }, { merge: true });
-                    if (type === 'session') await userDoc.set({ sessionData: newData }, { merge: true });
-                } catch (e) {
-                    console.error("Cloud sync failed", e);
-                }
-            };
+            useEffect(() => {
+                localStorage.setItem('valoClimb_history', JSON.stringify(history));
+            }, [history]);
+
+            useEffect(() => {
+                localStorage.setItem('valoClimb_routine', JSON.stringify(routine));
+            }, [routine]);
+
+            useEffect(() => {
+                localStorage.setItem('valoClimb_sessionData', JSON.stringify(sessionData));
+            }, [sessionData]);
+
+            const ranks = [
+                'Unranked', 'Iron 1', 'Iron 2', 'Iron 3', 'Bronze 1', 'Bronze 2', 'Bronze 3', 
+                'Silver 1', 'Silver 2', 'Silver 3', 'Gold 1', 'Gold 2', 'Gold 3', 
+                'Platinum 1', 'Platinum 2', 'Platinum 3', 'Diamond 1', 'Diamond 2', 'Diamond 3', 
+                'Ascendant 1', 'Ascendant 2', 'Ascendant 3', 'Immortal 1', 'Immortal 2', 'Immortal 3', 'Radiant'
+            ];
 
             const toggleTask = (id) => {
                 const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                const updated = routine.map(t => {
+                setRoutine(prev => prev.map(t => {
                     if (t.id === id) {
                         const newStatus = !t.completed;
                         return { 
@@ -207,14 +212,12 @@
                         };
                     }
                     return t;
-                });
-                setRoutine(updated);
-                syncToCloud(updated, 'routine');
+                }));
             };
 
             const toggleSubtask = (taskId, subIdx) => {
                 const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                const updated = routine.map(t => {
+                setRoutine(prev => prev.map(t => {
                     if (t.id === taskId) {
                         const newSubtasks = t.subtasks.map((s, idx) => 
                             idx === subIdx ? { ...s, done: !s.done } : s
@@ -228,22 +231,17 @@
                         };
                     }
                     return t;
-                });
-                setRoutine(updated);
-                syncToCloud(updated, 'routine');
+                }));
             };
 
             const updateSession = (key, val) => {
-                const updated = { ...sessionData, [key]: val };
-                setSessionData(updated);
-                syncToCloud(updated, 'session');
+                setSessionData(prev => ({ ...prev, [key]: val }));
             };
 
             const submitSession = async () => {
                 const missed = routine.filter(t => !t.completed).map(t => ({ time: t.time, task: t.task }));
-                const recordId = Date.now();
                 const newRecord = {
-                    id: recordId,
+                    id: Date.now(),
                     date: new Date().toLocaleDateString(),
                     timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
                     stats: { ...sessionData },
@@ -252,43 +250,42 @@
                 
                 if (user && firebaseConfig.apiKey) {
                     const db = firebase.firestore();
-                    const userDoc = db.collection('artifacts').doc(appId).collection('users').doc(user.uid);
-                    
-                    // 1. Add to history collection
-                    await userDoc.collection('history').doc(String(recordId)).set(newRecord);
-                    
-                    // 2. Reset daily state in cloud
-                    const resetStats = { ...sessionData, wins: 0, losses: 0, rrDiff: 0 };
-                    await userDoc.set({ routine: INITIAL_ROUTINE, sessionData: resetStats }, { merge: true });
+                    await db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('history').doc(String(newRecord.id)).set(newRecord);
+                } else {
+                    setHistory(prev => [newRecord, ...prev]);
                 }
 
+                setRoutine(INITIAL_ROUTINE);
+                setSessionData(prev => ({ 
+                    ...prev, 
+                    wins: 0, 
+                    losses: 0, 
+                    rrDiff: 0 
+                }));
+                
                 setActiveTab('history');
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             };
 
             const clearHistory = async () => {
-                if(confirm("Delete all historical logs?")) {
+                if(confirm("Are you sure you want to delete all historical logs?")) {
                     if (user && firebaseConfig.apiKey) {
                         const db = firebase.firestore();
-                        const histRef = db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('history');
-                        const snap = await histRef.get();
+                        const historyRef = db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('history');
+                        const snapshot = await historyRef.get();
                         const batch = db.batch();
-                        snap.docs.forEach(doc => batch.delete(doc.ref));
+                        snapshot.docs.forEach(doc => batch.delete(doc.ref));
                         await batch.commit();
                     }
+                    setHistory([]);
                 }
             };
 
-            const forceRefresh = () => window.location.reload();
+            const forceRefresh = () => {
+                window.location.reload();
+            };
 
             const progressPercent = Math.round((routine.filter(t => t.completed).length / routine.length) * 100);
-
-            const ranks = [
-                'Unranked', 'Iron 1', 'Iron 2', 'Iron 3', 'Bronze 1', 'Bronze 2', 'Bronze 3', 
-                'Silver 1', 'Silver 2', 'Silver 3', 'Gold 1', 'Gold 2', 'Gold 3', 
-                'Platinum 1', 'Platinum 2', 'Platinum 3', 'Diamond 1', 'Diamond 2', 'Diamond 3', 
-                'Ascendant 1', 'Ascendant 2', 'Ascendant 3', 'Immortal 1', 'Immortal 2', 'Immortal 3', 'Radiant'
-            ];
 
             return (
                 <div className="min-h-screen p-4 md:p-8 bg-[#0a0b10]">
@@ -303,13 +300,15 @@
                                 </div>
                             </div>
                             
-                            <div className="flex gap-2 bg-slate-900/50 p-1.5 rounded-2xl border border-slate-800">
-                                <button onClick={() => setActiveTab('daily')} className={`p-3 rounded-xl transition-all ${activeTab === 'daily' ? 'bg-red-600 text-white shadow-lg' : 'text-slate-500'}`}>
-                                    <LucideIcon name="check-square" />
-                                </button>
-                                <button onClick={() => setActiveTab('history')} className={`p-3 rounded-xl transition-all ${activeTab === 'history' ? 'bg-red-600 text-white shadow-lg' : 'text-slate-500'}`}>
-                                    <LucideIcon name="history" />
-                                </button>
+                            <div className="flex items-center gap-2">
+                                <div className="flex gap-2 bg-slate-900/50 p-1.5 rounded-2xl border border-slate-800">
+                                    <button onClick={() => setActiveTab('daily')} className={`p-3 rounded-xl transition-all ${activeTab === 'daily' ? 'bg-red-600 text-white shadow-lg' : 'text-slate-500'}`}>
+                                        <LucideIcon name="check-square" />
+                                    </button>
+                                    <button onClick={() => setActiveTab('history')} className={`p-3 rounded-xl transition-all ${activeTab === 'history' ? 'bg-red-600 text-white shadow-lg' : 'text-slate-500'}`}>
+                                        <LucideIcon name="history" />
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
@@ -459,7 +458,7 @@
                                 </div>
                             </div>
                         ) : (
-                            <div className="space-y-8">
+                            <div className="space-y-8 animate-in fade-in duration-500">
                                 <div className="flex justify-between items-center">
                                     <h2 className="text-2xl font-black text-white italic-force uppercase tracking-tighter">Archive</h2>
                                     <div className="flex items-center gap-4">
