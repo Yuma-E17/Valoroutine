@@ -229,6 +229,19 @@
                 }
             };
 
+            const handleGithubDownload = () => {
+                const htmlContent = document.documentElement.outerHTML;
+                const blob = new Blob([htmlContent], { type: 'text/html' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'index.html';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            };
+
             const progressPercent = Math.round((routine.filter(t => t.completed).length / routine.length) * 100);
 
             return (
@@ -242,13 +255,23 @@
                                 <p className="text-slate-500 text-[10px] font-black tracking-[0.3em] uppercase">Tactical Performance Cloud</p>
                             </div>
                             
-                            <div className="flex gap-2 bg-slate-900/50 p-1.5 rounded-2xl border border-slate-800">
-                                <button onClick={() => setActiveTab('daily')} className={`p-3 rounded-xl transition-all ${activeTab === 'daily' ? 'bg-red-600 text-white shadow-lg' : 'text-slate-500'}`}>
-                                    <LucideIcon name="check-square" />
+                            <div className="flex items-center gap-2">
+                                <button 
+                                    onClick={handleGithubDownload}
+                                    title="Download index.html for GitHub"
+                                    className="hidden md:flex p-3 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white hover:border-slate-600 transition-all items-center gap-2"
+                                >
+                                    <LucideIcon name="github" />
+                                    <span className="text-[10px] font-black uppercase">Download for GitHub</span>
                                 </button>
-                                <button onClick={() => setActiveTab('history')} className={`p-3 rounded-xl transition-all ${activeTab === 'history' ? 'bg-red-600 text-white shadow-lg' : 'text-slate-500'}`}>
-                                    <LucideIcon name="history" />
-                                </button>
+                                <div className="flex gap-2 bg-slate-900/50 p-1.5 rounded-2xl border border-slate-800">
+                                    <button onClick={() => setActiveTab('daily')} className={`p-3 rounded-xl transition-all ${activeTab === 'daily' ? 'bg-red-600 text-white shadow-lg' : 'text-slate-500'}`}>
+                                        <LucideIcon name="check-square" />
+                                    </button>
+                                    <button onClick={() => setActiveTab('history')} className={`p-3 rounded-xl transition-all ${activeTab === 'history' ? 'bg-red-600 text-white shadow-lg' : 'text-slate-500'}`}>
+                                        <LucideIcon name="history" />
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
