@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>VALO CLIMB | Tactical Tracker</title>
+    <title>VALOROUTINE | Tactical Tracker</title>
     
     <!-- PWA Metadata for iOS -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="ValoClimb">
+    <meta name="apple-mobile-web-app-title" content="Valoroutine">
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -45,7 +45,7 @@
         
         // Firebase Config Handling
         const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'valo-climb-default';
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'valoroutine-default';
         
         if (firebaseConfig.apiKey) {
             firebase.initializeApp(firebaseConfig);
@@ -293,10 +293,10 @@
                         
                         <div className="flex justify-between items-start mb-8 pt-4">
                             <div>
-                                <h1 className="text-4xl font-[900] text-red-600 tracking-tighter italic-force">VALO CLIMB</h1>
+                                <h1 className="text-4xl font-[900] text-red-600 tracking-tighter italic-force uppercase">VALOROUTINE</h1>
                                 <div className="flex items-center gap-2">
                                     <p className="text-slate-500 text-[10px] font-black tracking-[0.3em] uppercase">Tactical Performance Cloud</p>
-                                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-900 text-slate-600 font-bold border border-slate-800">v2.4.1</span>
+                                    <span className="text-[9px] px-1.5 py-0.5 rounded bg-slate-900 text-slate-600 font-bold border border-slate-800">v2.4.2</span>
                                 </div>
                             </div>
                             
@@ -335,10 +335,13 @@
                                                     {item.completed ? <LucideIcon name="check-circle" className="w-9 h-9" /> : <div className="w-9 h-9 border-2 border-current rounded-2xl rotate-45" />}
                                                 </div>
                                                 <div className="flex-1">
-                                                    <div className="flex justify-between items-start">
+                                                    <div className="flex justify-between items-start mb-0.5">
                                                         <div className="flex items-center gap-2">
-                                                            <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">{item.time}</span>
-                                                            <span className="text-[8px] font-bold text-slate-700 bg-slate-950 px-1.5 py-0.5 rounded uppercase">{item.duration}</span>
+                                                            <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest leading-none">{item.time}</span>
+                                                            {/* Fixed font visibility for iOS */}
+                                                            <span className="text-[10px] md:text-[8px] font-black text-slate-300 bg-slate-950 px-2 py-1 rounded uppercase flex items-center justify-center leading-none border border-white/5">
+                                                                {item.duration}
+                                                            </span>
                                                         </div>
                                                         {item.completedAt && <span className="text-[8px] font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full uppercase">Logged at {item.completedAt}</span>}
                                                     </div>
