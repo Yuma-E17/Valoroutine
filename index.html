@@ -60,19 +60,27 @@
             "Ascendant 1", "Ascendant 2", "Ascendant 3", "Immortal 1", "Immortal 2", "Immortal 3", "Radiant"
         ];
 
+        // Shared subtasks for all activation sessions
+        const ACTIVATION_SUBTASKS = [
+            { label: '15 pushups', done: false }, 
+            { label: '20 squats', done: false }, 
+            { label: '30s Plank', done: false }, 
+            { label: 'Wrist mobility', done: false }
+        ];
+
         const INITIAL_ROUTINE = [
             { id: 1, time: '10:30 AM', duration: '15m', task: 'Wake Up', completed: true, purpose: 'Reset circadian rhythm.', subtasks: [{ label: 'Drink water', done: true }, { label: 'Sunlight Exposure', done: true }, { label: 'Brush teeth', done: true }] },
-            { id: 2, time: '10:45 AM', duration: '15m', task: 'Morning Activation', completed: true, purpose: 'Improves mouse control.', subtasks: [{ label: '15 pushups', done: true }, { label: '20 squats', done: true }, { label: '30s Plank', done: true }, { label: 'Wrist mobility', done: true }] },
+            { id: 2, time: '10:45 AM', duration: '15m', task: 'Morning Activation', completed: true, purpose: 'Improves mouse control.', subtasks: ACTIVATION_SUBTASKS.map(s => ({...s, done: true})) },
             { id: 3, time: '11:00 AM', duration: '30m', task: 'Breakfast', completed: true, purpose: 'Avoid heavy carbs.', subtasks: [{ label: 'High Protein Meal', done: true }, { label: 'Hydrate', done: true }] },
             { id: 4, time: '11:30 AM', duration: '1h', task: 'Life Tasks', completed: true, purpose: 'Productivity window.' },
             { id: 5, time: '12:30 PM', duration: '45m', task: 'Mechanical Training', completed: false, purpose: 'Warm brain + coordination.', subtasks: [{ label: 'Flick training', done: false }, { label: 'Tracking training', done: false }] },
             { id: 6, time: '1:30 PM', duration: '2h', task: 'Ranked Block 1', completed: false, purpose: 'Peak performance window.' },
-            { id: 7, time: '3:30 PM', duration: '30m', task: 'Midday Activation', completed: false, purpose: 'Blood flow for focus.', subtasks: [{ label: '15 pushups', done: false }, { label: '20 Lunges', done: false }, { label: '30s Plank', done: false }, { label: 'Shoulder mobility', done: false }] },
+            { id: 7, time: '3:30 PM', duration: '30m', task: 'Midday Activation', completed: false, purpose: 'Blood flow for focus.', subtasks: JSON.parse(JSON.stringify(ACTIVATION_SUBTASKS)) },
             { id: 8, time: '4:00 PM', duration: '1h', task: 'Hard Reset Break', completed: false, purpose: 'Avoid mental fatigue.' },
             { id: 9, time: '5:00 PM', duration: '1.5h', task: 'Ranked Block 2', completed: false, purpose: 'Positioning focus.' },
             { id: 10, time: '6:30 PM', duration: '1h', task: 'Cardio', completed: true, purpose: 'Stress reduction.' },
             { id: 11, time: '8:30 PM', duration: '1.5h', task: 'Ranked Block 3', completed: false, purpose: 'Night session.' },
-            { id: 12, time: '10:00 PM', duration: '30m', task: 'Night Activation', completed: false, purpose: 'Evening core stability.', subtasks: [{ label: '15 Glute bridges', done: false }, { label: '30s Plank', done: false }, { label: 'Cat-Cow stretch', done: false }] },
+            { id: 12, time: '10:00 PM', duration: '30m', task: 'Night Activation', completed: false, purpose: 'Evening core stability.', subtasks: JSON.parse(JSON.stringify(ACTIVATION_SUBTASKS)) },
             { id: 13, time: '11:30 PM', duration: '1h', task: 'Winding Down', completed: false, purpose: 'Blue light reduction.' },
             { id: 15, time: '12:30 AM', duration: 'N/A', task: 'Sleep Attempt', completed: false, purpose: 'Recovery.' }
         ];
@@ -119,7 +127,6 @@
 
             const [stats, setStats] = useState(() => {
                 const saved = localStorage.getItem('valoroutine_stats_v6');
-                // Updated with user requested defaults
                 return saved ? JSON.parse(saved) : { rank: 'Silver 2', currentRR: 45, wins: 1, losses: 0, rrDelta: 23 };
             });
 
@@ -164,10 +171,6 @@
                     completion: progress
                 };
                 setHistory([newLog, ...history]);
-                // Optional: Reset transient stats for next session
-                // updateStat('wins', 0);
-                // updateStat('losses', 0);
-                // updateStat('rrDelta', 0);
                 setActiveTab('history');
             };
 
@@ -271,8 +274,6 @@
                                                 </div>
                                             ))}
                                         </div>
-                                        
-                                        {/* Submit Button */}
                                         <button 
                                             onClick={submitSession}
                                             className="w-full bg-red-600 hover:bg-red-700 text-white py-3 rounded-xl flex items-center justify-center gap-2 transition-all mt-2 active:scale-[0.98]"
