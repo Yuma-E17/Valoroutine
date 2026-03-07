@@ -43,6 +43,8 @@
             background-position: right 0.75rem center;
             background-size: 0.8em;
         }
+
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
     </style>
 </head>
 <body>
@@ -63,16 +65,16 @@
             { id: 2, time: '10:45 AM', duration: '15m', task: 'Morning Activation', completed: true, purpose: 'Improves mouse control.', subtasks: [{ label: '15 pushups', done: true }, { label: '20 squats', done: true }, { label: '30s Plank', done: true }, { label: 'Wrist mobility', done: true }] },
             { id: 3, time: '11:00 AM', duration: '30m', task: 'Breakfast', completed: true, purpose: 'Avoid heavy carbs.', subtasks: [{ label: 'High Protein Meal', done: true }, { label: 'Hydrate', done: true }] },
             { id: 4, time: '11:30 AM', duration: '1h', task: 'Life Tasks', completed: true, purpose: 'Productivity window.' },
-            { id: 5, time: '12:30 PM', duration: '45m', task: 'Mechanical Training', completed: true, purpose: 'Warm brain + coordination.', subtasks: [{ label: 'Flick training', done: true }, { label: 'Tracking training', done: true }] },
-            { id: 6, time: '1:30 PM', duration: '2h', task: 'Ranked Block 1', completed: true, purpose: 'Peak performance window.' },
-            { id: 7, time: '3:30 PM', duration: '30m', task: 'Midday Activation', completed: true, purpose: 'Blood flow for focus.', subtasks: [{ label: '15 pushups', done: true }, { label: '20 Lunges', done: true }, { label: '30s Plank', done: true }, { label: 'Shoulder mobility', done: true }] },
-            { id: 8, time: '4:00 PM', duration: '1h', task: 'Hard Reset Break', completed: true, purpose: 'Avoid mental fatigue.' },
-            { id: 9, time: '5:00 PM', duration: '1.5h', task: 'Ranked Block 2', completed: true, purpose: 'Positioning focus.' },
+            { id: 5, time: '12:30 PM', duration: '45m', task: 'Mechanical Training', completed: false, purpose: 'Warm brain + coordination.', subtasks: [{ label: 'Flick training', done: false }, { label: 'Tracking training', done: false }] },
+            { id: 6, time: '1:30 PM', duration: '2h', task: 'Ranked Block 1', completed: false, purpose: 'Peak performance window.' },
+            { id: 7, time: '3:30 PM', duration: '30m', task: 'Midday Activation', completed: false, purpose: 'Blood flow for focus.', subtasks: [{ label: '15 pushups', done: false }, { label: '20 Lunges', done: false }, { label: '30s Plank', done: false }, { label: 'Shoulder mobility', done: false }] },
+            { id: 8, time: '4:00 PM', duration: '1h', task: 'Hard Reset Break', completed: false, purpose: 'Avoid mental fatigue.' },
+            { id: 9, time: '5:00 PM', duration: '1.5h', task: 'Ranked Block 2', completed: false, purpose: 'Positioning focus.' },
             { id: 10, time: '6:30 PM', duration: '1h', task: 'Cardio', completed: true, purpose: 'Stress reduction.' },
-            { id: 11, time: '8:30 PM', duration: '1.5h', task: 'Ranked Block 3', completed: true, purpose: 'Night session.' },
-            { id: 12, time: '10:00 PM', duration: '30m', task: 'Night Activation', completed: true, purpose: 'Evening core stability.', subtasks: [{ label: '15 Glute bridges', done: true }, { label: '30s Plank', done: true }, { label: 'Cat-Cow stretch', done: true }] },
-            { id: 13, time: '11:30 PM', duration: '1h', task: 'Winding Down', completed: true, purpose: 'Blue light reduction.' },
-            { id: 15, time: '12:30 AM', duration: 'N/A', task: 'Sleep Attempt', completed: true, purpose: 'Recovery.' }
+            { id: 11, time: '8:30 PM', duration: '1.5h', task: 'Ranked Block 3', completed: false, purpose: 'Night session.' },
+            { id: 12, time: '10:00 PM', duration: '30m', task: 'Night Activation', completed: false, purpose: 'Evening core stability.', subtasks: [{ label: '15 Glute bridges', done: false }, { label: '30s Plank', done: false }, { label: 'Cat-Cow stretch', done: false }] },
+            { id: 13, time: '11:30 PM', duration: '1h', task: 'Winding Down', completed: false, purpose: 'Blue light reduction.' },
+            { id: 15, time: '12:30 AM', duration: 'N/A', task: 'Sleep Attempt', completed: false, purpose: 'Recovery.' }
         ];
 
         const LucideIcon = ({ name, className = "w-4 h-4" }) => {
@@ -95,13 +97,14 @@
 
         const App = () => {
             const [activeTab, setActiveTab] = useState('daily');
+            
             const [routine, setRoutine] = useState(() => {
-                const saved = localStorage.getItem('valoroutine_v5_data');
+                const saved = localStorage.getItem('valoroutine_v6_data');
                 return saved ? JSON.parse(saved) : INITIAL_ROUTINE;
             });
 
             const [gear, setGear] = useState(() => {
-                const saved = localStorage.getItem('valoroutine_gear_v5');
+                const saved = localStorage.getItem('valoroutine_gear_v6');
                 return saved ? JSON.parse(saved) : { 
                     mouse: 'Logitech G Pro', 
                     sens: '0.3', 
@@ -115,15 +118,22 @@
             });
 
             const [stats, setStats] = useState(() => {
-                const saved = localStorage.getItem('valoroutine_stats_v5');
-                return saved ? JSON.parse(saved) : { rank: 'Platinum 2', currentRR: 0, wins: 0, losses: 0, rrDelta: 0 };
+                const saved = localStorage.getItem('valoroutine_stats_v6');
+                // Updated with user requested defaults
+                return saved ? JSON.parse(saved) : { rank: 'Silver 2', currentRR: 45, wins: 1, losses: 0, rrDelta: 23 };
+            });
+
+            const [history, setHistory] = useState(() => {
+                const saved = localStorage.getItem('valoroutine_history_v6');
+                return saved ? JSON.parse(saved) : [];
             });
 
             useEffect(() => {
-                localStorage.setItem('valoroutine_v5_data', JSON.stringify(routine));
-                localStorage.setItem('valoroutine_gear_v5', JSON.stringify(gear));
-                localStorage.setItem('valoroutine_stats_v5', JSON.stringify(stats));
-            }, [routine, gear, stats]);
+                localStorage.setItem('valoroutine_v6_data', JSON.stringify(routine));
+                localStorage.setItem('valoroutine_gear_v6', JSON.stringify(gear));
+                localStorage.setItem('valoroutine_stats_v6', JSON.stringify(stats));
+                localStorage.setItem('valoroutine_history_v6', JSON.stringify(history));
+            }, [routine, gear, stats, history]);
 
             const toggleTask = (id) => {
                 setRoutine(prev => prev.map(t => {
@@ -147,23 +157,37 @@
 
             const updateStat = (key, val) => setStats(prev => ({ ...prev, [key]: val }));
 
+            const submitSession = () => {
+                const newLog = {
+                    date: new Date().toLocaleDateString(),
+                    ...stats,
+                    completion: progress
+                };
+                setHistory([newLog, ...history]);
+                // Optional: Reset transient stats for next session
+                // updateStat('wins', 0);
+                // updateStat('losses', 0);
+                // updateStat('rrDelta', 0);
+                setActiveTab('history');
+            };
+
             const progress = Math.round((routine.filter(t => t.completed).length / routine.length) * 100);
 
             return (
                 <div className="min-h-screen p-3 md:p-6 flex justify-center pb-8">
                     <div className="w-full max-w-md">
-                        {/* Header - Thinner */}
+                        {/* Header */}
                         <header className="mb-4 flex justify-between items-end px-1">
                             <div>
                                 <h1 className="text-2xl font-[900] text-red-600 italic-force tracking-tighter uppercase leading-none">VALOROUTINE</h1>
-                                <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest mt-1">Optimization System <span className="text-red-500/50 ml-1">V5.0</span></p>
+                                <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest mt-1">Optimization System <span className="text-red-500/50 ml-1">V6.0</span></p>
                             </div>
                             <div className="text-right">
                                 <div className="text-lg font-black text-white italic-force">{progress}%</div>
                             </div>
                         </header>
 
-                        {/* Navigation - Thinner vertically */}
+                        {/* Navigation */}
                         <div className="flex bg-slate-900/50 border border-slate-800/50 rounded-xl p-0.5 mb-4">
                             {[
                                 { id: 'daily', icon: 'crosshair', label: 'Active' },
@@ -181,7 +205,7 @@
                             ))}
                         </div>
 
-                        {/* Progress - Thinner */}
+                        {/* Progress Bar */}
                         <div className="bg-slate-900/40 border border-slate-800/50 p-0.5 rounded-full mb-4">
                             <div className="h-0.5 w-full bg-black/40 rounded-full overflow-hidden">
                                 <div className="h-full bg-red-600 progress-glow transition-all duration-700" style={{ width: `${progress}%` }} />
@@ -217,7 +241,7 @@
                                     </div>
                                 ))}
 
-                                {/* Post-Session - Thinner inputs */}
+                                {/* Post-Session Block */}
                                 <div className="bg-red-600/5 border border-red-600/10 p-4 rounded-2xl mt-4">
                                     <h2 className="text-xs font-black italic-force uppercase text-red-500 mb-3 flex items-center gap-2">
                                         <LucideIcon name="bar-chart" className="w-3.5 h-3.5"/> Session Analysis
@@ -232,17 +256,30 @@
                                             </div>
                                             <div className="space-y-1">
                                                 <label className="text-[7px] font-black text-slate-500 uppercase tracking-widest ml-1">RR</label>
-                                                <input type="number" value={stats.currentRR} onChange={(e) => updateStat('currentRR', e.target.value)} className="w-full bg-slate-950 border border-slate-800 px-2 py-1.5 rounded-lg text-[10px] font-bold text-white outline-none" />
+                                                <input type="number" value={stats.currentRR} onChange={(e) => updateStat('currentRR', parseInt(e.target.value) || 0)} className="w-full bg-slate-950 border border-slate-800 px-2 py-1.5 rounded-lg text-[10px] font-bold text-white outline-none" />
                                             </div>
                                         </div>
                                         <div className="grid grid-cols-3 gap-2">
-                                            {['wins', 'losses', 'rrDelta'].map(key => (
-                                                <div key={key} className="bg-slate-950 px-2 py-1.5 rounded-lg border border-slate-800 text-center">
-                                                    <span className="text-[7px] font-black text-slate-500 uppercase block mb-0.5">{key === 'rrDelta' ? 'RR Δ' : key}</span>
-                                                    <input type="number" value={stats[key]} onChange={(e) => updateStat(key, e.target.value)} className="bg-transparent text-[10px] font-black text-white w-full text-center outline-none" />
+                                            {[
+                                                { key: 'wins', label: 'Wins' },
+                                                { key: 'losses', label: 'Losses' },
+                                                { key: 'rrDelta', label: 'RR Δ' }
+                                            ].map(item => (
+                                                <div key={item.key} className="bg-slate-950 px-2 py-1.5 rounded-lg border border-slate-800 text-center">
+                                                    <span className="text-[7px] font-black text-slate-500 uppercase block mb-0.5">{item.label}</span>
+                                                    <input type="number" value={stats[item.key]} onChange={(e) => updateStat(item.key, parseInt(e.target.value) || 0)} className="bg-transparent text-[10px] font-black text-white w-full text-center outline-none" />
                                                 </div>
                                             ))}
                                         </div>
+                                        
+                                        {/* Submit Button */}
+                                        <button 
+                                            onClick={submitSession}
+                                            className="w-full bg-red-600 hover:bg-red-700 text-white py-3 rounded-xl flex items-center justify-center gap-2 transition-all mt-2 active:scale-[0.98]"
+                                        >
+                                            <LucideIcon name="upload-cloud" className="w-4 h-4" />
+                                            <span className="text-[10px] font-black uppercase tracking-widest">Submit Session Log</span>
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -274,9 +311,42 @@
                         )}
 
                         {activeTab === 'history' && (
-                            <div className="flex flex-col items-center justify-center py-12 text-slate-800">
-                                <LucideIcon name="history" className="w-8 h-8 mb-2 opacity-10" />
-                                <p className="text-[8px] font-black uppercase tracking-[0.2em] opacity-30">No Logs Found</p>
+                            <div className="space-y-3">
+                                {history.length === 0 ? (
+                                    <div className="flex flex-col items-center justify-center py-12 text-slate-800">
+                                        <LucideIcon name="history" className="w-8 h-8 mb-2 opacity-10" />
+                                        <p className="text-[8px] font-black uppercase tracking-[0.2em] opacity-30">No Logs Found</p>
+                                    </div>
+                                ) : (
+                                    history.map((entry, idx) => (
+                                        <div key={idx} className="bg-slate-900 border border-slate-800 p-3 rounded-xl">
+                                            <div className="flex justify-between items-center mb-2">
+                                                <span className="text-[10px] font-black text-white">{entry.date}</span>
+                                                <span className="text-[8px] font-black text-red-500 uppercase">{entry.completion}% Success</span>
+                                            </div>
+                                            <div className="grid grid-cols-4 gap-2">
+                                                <div className="text-center">
+                                                    <div className="text-[7px] text-slate-500 uppercase font-black">Rank</div>
+                                                    <div className="text-[10px] text-white font-bold">{entry.rank}</div>
+                                                </div>
+                                                <div className="text-center">
+                                                    <div className="text-[7px] text-slate-500 uppercase font-black">W/L</div>
+                                                    <div className="text-[10px] text-white font-bold">{entry.wins}/{entry.losses}</div>
+                                                </div>
+                                                <div className="text-center">
+                                                    <div className="text-[7px] text-slate-500 uppercase font-black">RR</div>
+                                                    <div className="text-[10px] text-white font-bold">{entry.currentRR}</div>
+                                                </div>
+                                                <div className="text-center">
+                                                    <div className="text-[7px] text-slate-500 uppercase font-black">Δ</div>
+                                                    <div className={`text-[10px] font-bold ${entry.rrDelta >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                                                        {entry.rrDelta > 0 ? `+${entry.rrDelta}` : entry.rrDelta}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
                             </div>
                         )}
                     </div>
